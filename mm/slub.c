@@ -1513,9 +1513,7 @@ static inline void *acquire_slab(struct kmem_cache *s,
 	if (!__cmpxchg_double_slab(s, page,
 			freelist, counters,
 			new.freelist, new.counters,
-			"acquire_slab"))
-
-		return NULL;
+			"lock and freeze"));
 
 	remove_partial(n, page);
 	WARN_ON(!freelist);
