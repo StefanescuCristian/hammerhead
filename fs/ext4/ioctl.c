@@ -123,6 +123,7 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			else
 				ext4_clear_inode_flag(inode, i);
 		}
+		ei->i_flags = flags;
 
 		ext4_set_inode_flags(inode);
 		inode->i_ctime = ext4_current_time(inode);
