@@ -115,7 +115,7 @@ EXPORT_SYMBOL_GPL(sync_filesystems);
 #endif
 
 /*
- * sync everything.  Start out by waking pdflush, because that writes back
+ * sync everything.  Start out by waking flusher, because that writes back
  * all queues in parallel.
  */
 static void do_sync(void)
