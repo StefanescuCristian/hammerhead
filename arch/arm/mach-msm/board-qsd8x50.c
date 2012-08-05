@@ -1533,11 +1533,16 @@ static void config_camera_off_gpios(void)
 		config_gpio_table(camera_off_gpio_ffa_table,
 		ARRAY_SIZE(camera_off_gpio_ffa_table));
 
+<<<<<<< HEAD
 		msm_camera_vreg_config(vreg_en);
 	}
 	config_gpio_table(camera_off_gpio_table,
 		ARRAY_SIZE(camera_off_gpio_table));
 }
+=======
+static const resource_size_t qsd8x50_surf_smc91x_base __initconst = 0x70000300;
+static const unsigned        qsd8x50_surf_smc91x_gpio __initconst = 156;
+>>>>>>> 62c44ef... sections: Fix section conflicts in arch/arm/
 
 static struct resource msm_camera_resources[] = {
 	{
