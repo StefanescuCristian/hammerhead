@@ -384,6 +384,9 @@ static struct file *fuse_create_open(struct inode *dir, struct dentry *entry,
 	struct fuse_file *ff;
 	struct file *file;
 
+	/* Userspace expects S_IFREG in create mode */
+	BUG_ON((mode & S_IFMT) != S_IFREG);
+
 	forget = fuse_alloc_forget();
 	err = -ENOMEM;
 	if (!forget)
