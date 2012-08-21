@@ -380,8 +380,7 @@ static inline void dma_cache_pre_ops(void *virtual_addr,
 
 	BUG_ON(!valid_dma_direction(dir));
 
-	if (!arch_is_coherent())
-		___dma_single_cpu_to_dev(virtual_addr, size, dir);
+	___dma_single_cpu_to_dev(virtual_addr, size, dir);
 }
 
 /**
@@ -403,7 +402,7 @@ static inline void dma_cache_post_ops(void *virtual_addr,
 
 	BUG_ON(!valid_dma_direction(dir));
 
-	if (arch_has_speculative_dfetch() && !arch_is_coherent()
+	if (arch_has_speculative_dfetch()
 	 && dir != DMA_TO_DEVICE)
 		/*
 		 * Treat DMA_BIDIRECTIONAL and DMA_FROM_DEVICE
