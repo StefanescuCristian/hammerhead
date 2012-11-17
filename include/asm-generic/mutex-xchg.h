@@ -26,7 +26,13 @@ static inline void
 __mutex_fastpath_lock(atomic_t *count, void (*fail_fn)(atomic_t *))
 {
 	if (unlikely(atomic_xchg(count, 0) != 1))
-		fail_fn(count);
+		/*
+		 * We failed to acquire the lock, so mark it contended
+		 * to ensure that any waiting tasks are woken up by the
+		 * unlock slow path.
+		 */
+		if (likely(atomic_xchg(count, -1) != 1))
+			fail_fn(count);
 }
 
 /**
@@ -42,7 +48,7 @@ __mutex_fastpath_lock_retval(atomic_t *count)
 {
 	if (unlikely(atomic_xchg(count, 0) != 1))
 		if (likely(atomic_xchg(count, -1) != 1))
-			return -1;
+			return fail_fn(count);
 	return 0;
 }
 
