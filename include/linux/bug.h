@@ -73,7 +73,12 @@ struct pt_regs;
  * build time, you should use BUILD_BUG to detect if it is
  * unexpectedly used.
  */
-#define BUILD_BUG() BUILD_BUG_ON_MSG(1, "BUILD_BUG failed")
+#define BUILD_BUG()						\
+	do {							\
+		extern void __build_bug_failed(void)		\
+			__compiletime_error("BUILD_BUG failed");\
+		__build_bug_failed();				\
+	} while (0)
 
 #endif	/* __CHECKER__ */
 
