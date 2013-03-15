@@ -316,6 +316,12 @@ static int msm_timer_set_next_event(unsigned long cycles,
 	    late < clock->freq*5)
 		return -ETIME;
 
+	ctrl &= ~TIMER_ENABLE_EN;
+	writel_relaxed(ctrl, event_base + TIMER_ENABLE);
+
+	writel_relaxed(ctrl, event_base + TIMER_CLEAR);
+	writel_relaxed(cycles, event_base + TIMER_MATCH_VAL);
+	writel_relaxed(ctrl | TIMER_ENABLE_EN, event_base + TIMER_ENABLE);
 	return 0;
 }
 
