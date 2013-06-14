@@ -974,17 +974,13 @@ qup_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int num)
 	long timeout;
 	int err;
 
-	/*
-	 * If all slaves of this controller behave as expected, they will
-	 * implement suspend and won't call any transaction if they are
-	 * suspended. Since controller is its parent, controller's suspend
-	 * will be called only AFTER alls slaves are suspended.
-	 * However reality is differe and some slave don't implement suspend
-	 * If a slave tries to initiate transfer when we are suspended,
-	 * pm_runtime_enabled is set to false by system-pm.
-	 * Make sure we return error when transaction is initiated while
-	 * we are in suspended state
-	 */
+	/* Alternate if runtime power management is disabled */
+	if (!pm_runtime_enabled(dev->dev)) {
+		dev_dbg(dev->dev, "Runtime PM is disabled\n");
+		i2c_qup_pm_resume_runtime(dev->dev);
+	} else {
+		pm_runtime_get_sync(dev->dev);
+	}
 	mutex_lock(&dev->mlock);
 	if (dev->pwr_state >= MSM_I2C_SYS_SUSPENDING) {
 		dev_err(dev->dev,
@@ -1800,8 +1796,8 @@ static int i2c_qup_pm_suspend_sys(struct device *device)
 	dev->pwr_state = MSM_I2C_SYS_SUSPENDING;
 	mutex_unlock(&dev->mlock);
 	if (!pm_runtime_enabled(device) || !pm_runtime_suspended(device)) {
-		dev_dbg(device, "system suspend\n");
-		i2c_qup_pm_suspend(dev);
+		dev_dbg(device, "system suspend");
+		i2c_qup_pm_suspend_runtime(device);
 		/*
 		 * set the device's runtime PM status to 'suspended'
 		 */
@@ -1815,15 +1811,12 @@ static int i2c_qup_pm_suspend_sys(struct device *device)
 
 static int i2c_qup_pm_resume_sys(struct device *device)
 {
-	struct platform_device *pdev = to_platform_device(device);
-	struct qup_i2c_dev *dev = platform_get_drvdata(pdev);
 	/*
 	 * Rely on runtime-PM to call resume in case it is enabled
 	 * Even if it's not enabled, rely on 1st client transaction to do
 	 * clock ON and gpio configuration
 	 */
-	dev_dbg(device, "system resume\n");
-	dev->pwr_state = MSM_I2C_PM_SUSPENDED;
+	dev_dbg(device, "system resume");
 	return 0;
 }
 #endif /* CONFIG_PM */
