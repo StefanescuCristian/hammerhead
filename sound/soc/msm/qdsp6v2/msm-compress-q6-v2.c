@@ -409,6 +409,7 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 	struct asm_wma_cfg wma_cfg;
 	struct asm_wmapro_cfg wma_pro_cfg;
 	int ret = 0;
+	uint16_t bit_width;
 
 	switch (prtd->codec) {
 	case FORMAT_LINEAR_PCM:
