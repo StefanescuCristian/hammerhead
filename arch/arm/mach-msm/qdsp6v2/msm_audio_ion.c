@@ -53,11 +53,7 @@ int msm_audio_ion_alloc(const char *name, struct ion_client **client,
 		pr_debug("%s:probe is not done, deferred\n", __func__);
 		return -EPROBE_DEFER;
 	}
-	if (!name || !client || !handle || !paddr || !vaddr
-		|| !bufsz || !pa_len) {
-		pr_err("%s: Invalid params\n", __func__);
-		return -EINVAL;
-	}
+
 	*client = msm_audio_ion_client_create(UINT_MAX, name);
 	if (IS_ERR_OR_NULL((void *)(*client))) {
 		pr_err("%s: ION create client for AUDIO failed\n", __func__);
@@ -106,9 +102,9 @@ int msm_audio_ion_alloc(const char *name, struct ion_client **client,
 
 err_ion_handle:
 	ion_free(*client, *handle);
+	*handle = NULL;
 err_ion_client:
 	msm_audio_ion_client_destroy(*client);
-	*handle = NULL;
 	*client = NULL;
 err:
 	return -EINVAL;
