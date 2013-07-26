@@ -443,4 +443,4 @@ CFLAGS_ipc_socket.o := -fno-strict-aliasing
 CFLAGS_msm_ipc_router_security.o := -fno-strict-aliasing
 CFLAGS_rpm_log.o := -fno-strict-aliasing
 endif
-
+obj-$(CONFIG_HAS_MACH_MEMUTILS) += memutils/
