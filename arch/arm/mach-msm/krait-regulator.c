@@ -1008,6 +1008,7 @@ static int krait_regulator_cpu_callback(struct notifier_block *nfb,
 			(int)action, cpu, cpu_online(cpu));
 	switch (action & ~CPU_TASKS_FROZEN) {
 	case CPU_UP_PREPARE:
+	case CPU_UP_CANCELED:
 		mutex_lock(&pvreg->krait_power_vregs_lock);
 		kvreg->force_bhs = true;
 		/*
@@ -1018,7 +1019,6 @@ static int krait_regulator_cpu_callback(struct notifier_block *nfb,
 		__switch_to_using_bhs(kvreg);
 		mutex_unlock(&pvreg->krait_power_vregs_lock);
 		break;
-	case CPU_UP_CANCELED:
 	case CPU_ONLINE:
 		mutex_lock(&pvreg->krait_power_vregs_lock);
 		kvreg->force_bhs = false;
