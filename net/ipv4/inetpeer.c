@@ -26,6 +26,14 @@
  *  Theory of operations.
  *  We keep one entry for each peer IP address.  The nodes contains long-living
  *  information about the peer which doesn't depend on routes.
+ *  At this moment this information consists only of ID field for the next
+ *  outgoing IP packet.  This field is incremented with each packet as encoded
+ *  in inet_getid() function (include/net/inetpeer.h).
+ *  At the moment of writing this notes identifier of IP packets is generated
+ *  to be unpredictable using this code only for packets subjected
+ *  (actually or potentially) to defragmentation.  I.e. DF packets less than
+ *  PMTU in size when local fragmentation is disabled use a constant ID and do
+ *  not use this code (see ip_select_ident() in include/net/ip.h).
  *
  *  Nodes are removed only when reference counter goes to 0.
  *  When it's happened the node may be removed when a sufficient amount of
