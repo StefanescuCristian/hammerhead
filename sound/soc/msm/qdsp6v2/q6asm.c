@@ -80,6 +80,12 @@ void *q6asm_mmap_apr_reg(void);
 
 static int q6asm_is_valid_session(struct apr_client_data *data, void *priv);
 
+/* for ASM custom topology */
+static struct audio_buffer common_buf;
+static struct audio_client common_client;
+static int set_custom_topology;
+static int topology_map_handle;
+
 #ifdef CONFIG_DEBUG_FS
 #define OUT_BUFFER_SIZE 56
 #define IN_BUFFER_SIZE 24
@@ -97,10 +103,6 @@ static int in_cont_index;
 static int out_cold_index;
 static char *out_buffer;
 static char *in_buffer;
-static struct audio_buffer common_buf;
-static struct audio_client common_client;
-static int set_custom_topology;
-static int topology_map_handle;
 
 
 int q6asm_mmap_apr_dereg(void)
