@@ -18,7 +18,7 @@
 #include "internal.h"
 
 #ifdef CONFIG_DYNAMIC_FSYNC
-extern bool early_suspend_active;
+extern bool power_suspend_active;
 extern bool dyn_fsync_active;
 #endif
 
@@ -91,10 +91,16 @@ static void sync_one_sb(struct super_block *sb, void *arg)
  * Sync all the data for all the filesystems (called by sys_sync() and
  * emergency sync)
  */
+#ifndef CONFIG_DYNAMIC_FSYNC
+static
+#endif
 void sync_filesystems(int wait)
 {
 	iterate_supers(sync_one_sb, &wait);
 }
+#ifdef CONFIG_DYNAMIC_FSYNC
+EXPORT_SYMBOL_GPL(sync_filesystems);
+#endif
 
 /*
  * sync everything.  Start out by waking flusher, because that writes back
@@ -169,34 +175,14 @@ SYSCALL_DEFINE1(syncfs, int, fd)
  */
 int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
 {
-	#ifdef CONFIG_DYNAMIC_FSYNC
-	if (unlikely(dyn_fsync_active && !early_suspend_active))
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && !power_suspend_active))
 		return 0;
 	else {
-    #endif
-	struct address_space *mapping = file->f_mapping;
-	int err, ret;
-
-	if (!file->f_op || !file->f_op->fsync) {
-		ret = -EINVAL;
-		goto out;
-		
-	}
-
-	ret = filemap_write_and_wait_range(mapping, start, end);
-
-	/*
-	 * We need to protect against concurrent writers, which could cause
-	 * livelocks in fsync_buffers_list().
-	 */
-	mutex_lock(&mapping->host->i_mutex);
-	err = file->f_op->fsync(file, datasync);
-	if (!ret)
-		ret = err;
-	mutex_unlock(&mapping->host->i_mutex);
-
-out:
-	return ret;
+#endif
+	if (!file->f_op || !file->f_op->fsync)
+		return -EINVAL;
+	return file->f_op->fsync(file, start, end, datasync);
 #ifdef CONFIG_DYNAMIC_FSYNC
 	}
 #endif
@@ -233,21 +219,21 @@ static int do_fsync(unsigned int fd, int datasync)
 
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
 {
-	#ifdef CONFIG_DYNAMIC_FSYNC
-	if (unlikely(dyn_fsync_active && !early_suspend_active))
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && !power_suspend_active))
 		return 0;
 	else
-    #endif
+#endif
 	return do_fsync(fd, 0);
 }
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
-	#ifdef CONFIG_DYNAMIC_FSYNC
-	if (unlikely(dyn_fsync_active && !early_suspend_active))
+#if 0
+	if (likely(dyn_fsync_active && !power_suspend_active))
 		return 0;
 	else
-    #endif
+#endif
 	return do_fsync(fd, 1);
 }
 
@@ -318,11 +304,12 @@ EXPORT_SYMBOL(generic_write_sync);
 SYSCALL_DEFINE(sync_file_range)(int fd, loff_t offset, loff_t nbytes,
 				unsigned int flags)
 {
-	#ifdef CONFIG_DYNAMIC_FSYNC
-	if (unlikely(dyn_fsync_active && !early_suspend_active))
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && !power_suspend_active))
 		return 0;
 	else {
-    #endif
+#endif
+
 	int ret;
 	struct file *file;
 	struct address_space *mapping;
@@ -421,11 +408,11 @@ SYSCALL_ALIAS(sys_sync_file_range, SyS_sync_file_range);
 SYSCALL_DEFINE(sync_file_range2)(int fd, unsigned int flags,
 				 loff_t offset, loff_t nbytes)
 {
-	#ifdef CONFIG_DYNAMIC_FSYNC
-	if (unlikely(dyn_fsync_active && !early_suspend_active))
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && !power_suspend_active))
 		return 0;
 	else
-    #endif
+#endif
 	return sys_sync_file_range(fd, offset, nbytes, flags);
 }
 #ifdef CONFIG_HAVE_SYSCALL_WRAPPERS
