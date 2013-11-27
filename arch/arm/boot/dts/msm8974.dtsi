@@ -1062,6 +1062,10 @@
 		compatible = "qcom,msm-lsm-client";
 	};
 
+	qti,msm-pcm-loopback {
+		compatible = "qti,msm-pcm-loopback";
+	};
+
 	qcom,msm-voice-svc {
 		compatible = "qcom,msm-voice-svc";
 	};
