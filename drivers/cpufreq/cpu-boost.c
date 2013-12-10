@@ -26,6 +26,7 @@ struct cpu_sync {
 	struct task_struct *thread;
 	wait_queue_head_t sync_wq;
 	struct delayed_work boost_rem;
+	struct work_struct boost_stop;
 	int cpu;
 	spinlock_t lock;
 	bool pending;
@@ -35,6 +36,10 @@ struct cpu_sync {
 
 static DEFINE_PER_CPU(struct cpu_sync, sync_info);
 static struct workqueue_struct *boost_rem_wq;
+static struct kernel_param_ops module_ops;
+
+static unsigned int enable = 1;
+module_param_cb(enabled, &module_ops, &enable, 0644);
 
 static unsigned int boost_ms = 50;
 module_param(boost_ms, uint, 0644);
@@ -164,6 +169,72 @@ static struct notifier_block boost_migration_nb = {
 	.notifier_call = boost_migration_notify,
 };
 
+static void enable_boost(void)
+{
+	int cpu;
+	struct cpu_sync *s;
+
+	atomic_notifier_chain_register(&migration_notifier_head,
+				       &boost_migration_nb);
+
+	for_each_possible_cpu(cpu) {
+		s = &per_cpu(sync_info, cpu);
+		if (!s->thread)
+			s->thread = kthread_run(boost_mig_sync_thread,
+						(void *)cpu,
+						"boost_sync/%d", cpu);
+	}
+}
+
+static void disable_boost(struct work_struct *work)
+{
+	int cpu;
+	struct cpu_sync *s;
+
+	atomic_notifier_chain_unregister(&migration_notifier_head,
+					 &boost_migration_nb);
+
+	for_each_possible_cpu(cpu) {
+		s = &per_cpu(sync_info, cpu);
+		flush_workqueue(boost_rem_wq);
+		cancel_delayed_work_sync(&s->boost_rem);
+		if (s->thread) {
+			kthread_stop(s->thread);
+			s->thread = NULL;
+		}
+		wake_up(&s->sync_wq);
+	}
+}
+
+static int set_boost_enabled(const char *val, const struct kernel_param *kp)
+{
+	int ret;
+	unsigned int running = enable;
+	struct cpu_sync *s = &per_cpu(sync_info, 0);
+
+	ret = param_set_bool(val, kp);
+	if (ret)
+		return -EINVAL;
+
+	if (running == enable)
+		return pr_err("cpuboost thread already %s\n",
+			      enable ? "running" : "stopped");
+
+	if (enable)
+		enable_boost();
+	else
+		schedule_work(&s->boost_stop);
+
+	pr_info("cpuboost thread %s\n", enable ? "started" : "stopped");
+
+	return ret;
+}
+
+static struct kernel_param_ops module_ops = {
+	.set = set_boost_enabled,
+	.get = param_get_bool,
+};
+
 static int cpu_boost_init(void)
 {
 	int cpu;
@@ -180,9 +251,12 @@ static int cpu_boost_init(void)
 		s->cpu = cpu;
 		init_waitqueue_head(&s->sync_wq);
 		spin_lock_init(&s->lock);
+		INIT_WORK(&s->boost_stop, disable_boost);
 		INIT_DELAYED_WORK(&s->boost_rem, do_boost_rem);
-		s->thread = kthread_run(boost_mig_sync_thread, (void *)cpu,
-					"boost_sync/%d", cpu);
+		if (enable)
+			s->thread = kthread_run(boost_mig_sync_thread,
+						(void *)cpu,
+						"boost_sync/%d", cpu);
 	}
 	atomic_notifier_chain_register(&migration_notifier_head,
 					&boost_migration_nb);
