@@ -192,7 +192,6 @@ struct qup_i2c_dev {
 	int                          wr_sz;
 	struct msm_i2c_platform_data *pdata;
 	enum msm_i2c_state           pwr_state;
-	atomic_t		     xfer_progress;
 	struct mutex                 mlock;
 	void                         *complete;
 	int                          i2c_gpios[ARRAY_SIZE(i2c_rsrcs)];
@@ -974,13 +973,17 @@ qup_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int num)
 	long timeout;
 	int err;
 
-	/* Alternate if runtime power management is disabled */
-	if (!pm_runtime_enabled(dev->dev)) {
-		dev_dbg(dev->dev, "Runtime PM is disabled\n");
-		i2c_qup_pm_resume_runtime(dev->dev);
-	} else {
-		pm_runtime_get_sync(dev->dev);
-	}
+	/*
+	 * If all slaves of this controller behave as expected, they will
+	 * implement suspend and won't call any transaction if they are
+	 * suspended. Since controller is its parent, controller's suspend
+	 * will be called only AFTER alls slaves are suspended.
+	 * However reality is differe and some slave don't implement suspend
+	 * If a slave tries to initiate transfer when we are suspended,
+	 * pm_runtime_enabled is set to false by system-pm.
+	 * Make sure we return error when transaction is initiated while
+	 * we are in suspended state
+	 */
 	mutex_lock(&dev->mlock);
 	if (dev->pwr_state >= MSM_I2C_SYS_SUSPENDING) {
 		dev_err(dev->dev,
@@ -1304,7 +1307,6 @@ timeout_err:
 	dev->cnt = 0;
 	if (dev->pdata->clk_ctl_xfer)
 		i2c_qup_pm_suspend_clk(dev);
-	atomic_set(&dev->xfer_progress, 0);
 	mutex_unlock(&dev->mlock);
 	pm_runtime_mark_last_busy(dev->dev);
 	pm_runtime_put_autosuspend(dev->dev);
@@ -1655,7 +1657,6 @@ blsp_core_init:
 
 	mutex_init(&dev->mlock);
 	dev->pwr_state = MSM_I2C_PM_SUSPENDED;
-	atomic_set(&dev->xfer_progress, 0);
 	/* If the same AHB clock is used on Modem side
 	 * switch it on here itself and don't switch it
 	 * on and off during suspend and resume.
@@ -1796,8 +1797,8 @@ static int i2c_qup_pm_suspend_sys(struct device *device)
 	dev->pwr_state = MSM_I2C_SYS_SUSPENDING;
 	mutex_unlock(&dev->mlock);
 	if (!pm_runtime_enabled(device) || !pm_runtime_suspended(device)) {
-		dev_dbg(device, "system suspend");
-		i2c_qup_pm_suspend_runtime(device);
+		dev_dbg(device, "system suspend\n");
+		i2c_qup_pm_suspend(dev);
 		/*
 		 * set the device's runtime PM status to 'suspended'
 		 */
@@ -1811,12 +1812,15 @@ static int i2c_qup_pm_suspend_sys(struct device *device)
 
 static int i2c_qup_pm_resume_sys(struct device *device)
 {
+	struct platform_device *pdev = to_platform_device(device);
+	struct qup_i2c_dev *dev = platform_get_drvdata(pdev);
 	/*
 	 * Rely on runtime-PM to call resume in case it is enabled
 	 * Even if it's not enabled, rely on 1st client transaction to do
 	 * clock ON and gpio configuration
 	 */
-	dev_dbg(device, "system resume");
+	dev_dbg(device, "system resume\n");
+	dev->pwr_state = MSM_I2C_PM_SUSPENDED;
 	return 0;
 }
 #endif /* CONFIG_PM */
