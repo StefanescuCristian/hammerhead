@@ -73,20 +73,17 @@
  * The waiter reads the futex value in user space and calls
  * futex_wait(). This function computes the hash bucket and acquires
  * the hash bucket lock. After that it reads the futex user space value
- * again and verifies that the data has not changed. If it has not changed
- * it enqueues itself into the hash bucket, releases the hash bucket lock
- * and schedules.
+ * again and verifies that the data has not changed. If it has not
+ * changed it enqueues itself into the hash bucket, releases the hash
+ * bucket lock and schedules.
  *
  * The waker side modifies the user space value of the futex and calls
- * futex_wake(). This function computes the hash bucket and acquires the
- * hash bucket lock. Then it looks for waiters on that futex in the hash
- * bucket and wakes them.
+ * futex_wake(). This functions computes the hash bucket and acquires
+ * the hash bucket lock. Then it looks for waiters on that futex in the
+ * hash bucket and wakes them.
  *
- * In futex wake up scenarios where no tasks are blocked on a futex, taking
- * the hb spinlock can be avoided and simply return. In order for this
- * optimization to work, ordering guarantees must exist so that the waiter
- * being added to the list is acknowledged when the list is concurrently being
- * checked by the waker, avoiding scenarios like the following:
+ * Note that the spin_lock serializes waiters and wakers, so that the
+ * following scenario is avoided:
  *
  * CPU 0                               CPU 1
  * val = *futex;
@@ -107,52 +104,24 @@
  * This would cause the waiter on CPU 0 to wait forever because it
  * missed the transition of the user space value from val to newval
  * and the waker did not find the waiter in the hash bucket queue.
+ * The spinlock serializes that:
  *
- * The correct serialization ensures that a waiter either observes
- * the changed user space value before blocking or is woken by a
- * concurrent waker:
- *
- * CPU 0                                 CPU 1
+ * CPU 0                               CPU 1
  * val = *futex;
  * sys_futex(WAIT, futex, val);
  *   futex_wait(futex, val);
- *
- *   waiters++;
- *   mb(); (A) <-- paired with -.
- *                              |
- *   lock(hash_bucket(futex));  |
- *                              |
- *   uval = *futex;             |
- *                              |        *futex = newval;
- *                              |        sys_futex(WAKE, futex);
- *                              |          futex_wake(futex);
- *                              |
- *                              `------->  mb(); (B)
+ *   lock(hash_bucket(futex));
+ *   uval = *futex;
+ *                                     *futex = newval;
+ *                                     sys_futex(WAKE, futex);
+ *                                       futex_wake(futex);
+ *                                       lock(hash_bucket(futex));
  *   if (uval == val)
- *     queue();
+ *      queue();
  *     unlock(hash_bucket(futex));
- *     schedule();                         if (waiters)
- *                                           lock(hash_bucket(futex));
- *                                           wake_waiters(futex);
- *                                           unlock(hash_bucket(futex));
- *
- * Where (A) orders the waiters increment and the futex value read -- this
- * is guaranteed by the head counter in the hb spinlock; and where (B)
- * orders the write to futex and the waiters read -- this is done by the
- * barriers in get_futex_key_refs(), through either ihold or atomic_inc,
- * depending on the futex type.
- *
- * This yields the following case (where X:=waiters, Y:=futex):
- *
- *	X = Y = 0
- *
- *	w[X]=1		w[Y]=1
- *	MB		MB
- *	r[Y]=y		r[X]=x
- *
- * Which guarantees that x==0 && y==0 is impossible; which translates back into
- * the guarantee that we cannot both miss the futex variable change and the
- * enqueue.
+ *     schedule();                       if (!queue_empty())
+ *                                         wake_waiters(futex);
+ *                                       unlock(hash_bucket(futex));
  */
 
 int __read_mostly futex_cmpxchg_enabled;
