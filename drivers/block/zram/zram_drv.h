@@ -88,17 +88,17 @@ struct table {
 } __attribute__((aligned(4)));
 
 struct zram_stats {
-	u64 compr_size;		/* compressed size of pages stored */
-	u64 num_reads;		/* failed + successful */
-	u64 num_writes;		/* --do-- */
-	u64 failed_reads;	/* should NEVER! happen */
-	u64 failed_writes;	/* can happen when memory is too low */
-	u64 invalid_io;		/* non-page-aligned I/O requests */
-	u64 notify_free;	/* no. of swap slot free notifications */
-	u32 pages_zero;		/* no. of zero filled pages */
-	u32 pages_stored;	/* no. of pages currently stored */
-	u32 good_compress;	/* % of pages with compression ratio<=50% */
-	u32 pages_expand;	/* % of incompressible pages */
+	atomic64_t compr_size;	/* compressed size of pages stored */
+	atomic64_t num_reads;	/* failed + successful */
+	atomic64_t num_writes;	/* --do-- */
+	atomic64_t failed_reads;	/* should NEVER! happen */
+	atomic64_t failed_writes;	/* can happen when memory is too low */
+	atomic64_t invalid_io;	/* non-page-aligned I/O requests */
+	atomic64_t notify_free;	/* no. of swap slot free notifications */
+	atomic_t pages_zero;		/* no. of zero filled pages */
+	atomic_t pages_stored;	/* no. of pages currently stored */
+	atomic_t good_compress;	/* % of pages with compression ratio<=50% */
+	atomic_t bad_compress;	/* % of pages with compression ratio>=75% */
 };
 
 struct zram {
@@ -106,9 +106,23 @@ struct zram {
 	void *compress_workmem;
 	void *compress_buffer;
 	struct table *table;
-	spinlock_t stat64_lock;	/* protect 64-bit stats */
-	struct rw_semaphore lock; /* protect compression buffers and table
-				   * against concurrent read and writes */
+	struct zs_pool *mem_pool;
+};
+
+struct zram_slot_free {
+	unsigned long index;
+	struct zram_slot_free *next;
+};
+
+struct zram {
+	struct zram_meta *meta;
+	struct rw_semaphore lock; /* protect compression buffers, table,
+				   * reads and writes
+				   */
+
+	struct work_struct free_work;  /* handle pending free request */
+	struct zram_slot_free *slot_free_rq; /* list head of free request */
+
 	struct request_queue *queue;
 	struct gendisk *disk;
 	int init_done;
