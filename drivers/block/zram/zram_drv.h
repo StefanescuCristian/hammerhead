@@ -101,8 +101,8 @@ struct zram_stats {
 	atomic_t bad_compress;	/* % of pages with compression ratio>=75% */
 };
 
-struct zram {
-	struct zs_pool *mem_pool;
+struct zram_meta {
+	rwlock_t tb_lock;	/* protect table */
 	void *compress_workmem;
 	void *compress_buffer;
 	struct table *table;
@@ -116,7 +116,7 @@ struct zram_slot_free {
 
 struct zram {
 	struct zram_meta *meta;
-	struct rw_semaphore lock; /* protect compression buffers, table,
+	struct rw_semaphore lock; /* protect compression buffers,
 				   * reads and writes
 				   */
 
