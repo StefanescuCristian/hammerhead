@@ -504,8 +504,11 @@ static void alarm_shutdown(struct platform_device *dev)
 
 	spin_lock_irqsave(&alarm_slock, flags);
 
-	if (!power_on_alarm)
+	if (!power_on_alarm) {
+		spin_unlock_irqrestore(&alarm_slock, flags);
 		goto disable_alarm;
+	}
+	spin_unlock_irqrestore(&alarm_slock, flags);
 
 	spin_unlock_irqrestore(&alarm_slock, flags);
 
