@@ -155,11 +155,12 @@ static void run_boost_migration(unsigned int cpu)
 	if (ret)
 		return;
 
-	req_freq = max((dest_policy.max * s->task_load) / 100,
-					src_policy.cur);
+	req_freq = load_based_syncs ?
+		(dest_policy.cpuinfo.max_freq * s->task_load) / 100 :
+						src_policy.cur;
 
 	if (req_freq <= dest_policy.cpuinfo.min_freq) {
-		pr_debug("No sync. Sync Freq:%u\n", req_freq);
+			pr_debug("No sync. Sync Freq:%u\n", req_freq);
 		return;
 	}
 
@@ -230,7 +231,7 @@ static int boost_migration_notify(struct notifier_block *nb,
 		return NOTIFY_OK;
 
 	if (load_based_syncs && ((mnd->load < 0) || (mnd->load > 100))) {
-		pr_debug("Invalid load: %d\n", mnd->load);
+		pr_err("cpu-boost:Invalid load: %d\n", mnd->load);
 		return NOTIFY_OK;
 	}
 
