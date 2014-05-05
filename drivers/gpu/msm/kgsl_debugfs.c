@@ -262,10 +262,10 @@ static void print_mem_entry(struct seq_file *s, struct kgsl_mem_entry *entry)
 	kgsl_get_memory_usage(usage, sizeof(usage), m->flags);
 
 	seq_printf(s, "%pK %pK %8zd %5d %6s %10s %16s %5d\n",
-			(unsigned long *) m->gpuaddr,
-			(unsigned long *) m->useraddr,
-			m->size, entry->id, flags,
-			memtype_str(entry->memtype), usage, m->sglen);
+			   (unsigned long *)(uintptr_t) m->gpuaddr,
+			   (unsigned long *) m->useraddr,
+				m->size, entry->id, flags,
+				memtype_str(entry->memtype), usage, m->sglen);
 }
 
 static int process_mem_print(struct seq_file *s, void *unused)
@@ -353,7 +353,7 @@ kgsl_process_init_debugfs(struct kgsl_process_private *private)
 	 * So if debugfs is disabled in kernel, return as
 	 * success.
 	 */
-	dentry = debugfs_create_file("mem", 0400, private->debug_root, private,
+	dentry = debugfs_create_file("mem", 0444, private->debug_root, private,
 			    &process_mem_fops);
 
 	if (IS_ERR(dentry)) {
