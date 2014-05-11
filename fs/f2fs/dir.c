@@ -285,6 +285,8 @@ static void init_dent_inode(const struct qstr *name, struct page *ipage)
 {
 	struct f2fs_inode *ri;
 
+	f2fs_wait_on_page_writeback(ipage, NODE);
+
 	/* copy name info. to this inode page */
 	ri = F2FS_INODE(ipage);
 	ri->i_namelen = cpu_to_le32(name->len);
@@ -651,19 +653,23 @@ static int f2fs_readdir(struct file *file, void *dirent, filldir_t filldir)
 	unsigned long pos = file->f_pos;
 	struct inode *inode = file->f_dentry->d_inode;
 	unsigned long npages = dir_blocks(inode);
-	unsigned char *types = NULL;
+	unsigned char *types = f2fs_filetype_table;
 	unsigned int bit_pos = 0, start_bit_pos = 0;
 	int over = 0;
 	struct f2fs_dentry_block *dentry_blk = NULL;
 	struct f2fs_dir_entry *de = NULL;
 	struct page *dentry_page = NULL;
-	unsigned int n = 0;
+	struct file_ra_state *ra = &file->f_ra;
+	unsigned int n = (pos / NR_DENTRY_IN_BLOCK);
 	unsigned char d_type = DT_UNKNOWN;
 	int slots;
 
-	types = f2fs_filetype_table;
 	bit_pos = (pos % NR_DENTRY_IN_BLOCK);
-	n = (pos / NR_DENTRY_IN_BLOCK);
+
+	/* readahead for multi pages of dir */
+	if (npages - n > 1 && !ra_has_index(ra, n))
+		page_cache_sync_readahead(inode->i_mapping, ra, file, n,
+				min(npages - n, (pgoff_t)MAX_DIR_RA_PAGES));
 
 	for (; n < npages; n++) {
 		dentry_page = get_lock_data_page(inode, n);

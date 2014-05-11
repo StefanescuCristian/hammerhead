@@ -715,22 +715,24 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 			kthread_stop(sm_info->f2fs_issue_flush);
 		sm_info->issue_list = sm_info->dispatch_list = NULL;
 		sm_info->f2fs_issue_flush = NULL;
-	} else if (test_opt(sbi, FLUSH_MERGE)) {
-		struct f2fs_sm_info *sm_info = sbi->sm_info;
-
-		if (!sm_info->f2fs_issue_flush) {
-			dev_t dev = sbi->sb->s_bdev->bd_dev;
-
-			spin_lock_init(&sm_info->issue_lock);
-			init_waitqueue_head(&sm_info->flush_wait_queue);
-			sm_info->f2fs_issue_flush =
-				kthread_run(issue_flush_thread, sbi,
-				"f2fs_flush-%u:%u", MAJOR(dev), MINOR(dev));
-			if (IS_ERR(sm_info->f2fs_issue_flush)) {
-				err = PTR_ERR(sm_info->f2fs_issue_flush);
-				sm_info->f2fs_issue_flush = NULL;
-				goto restore_gc;
-			}
+	} else if (test_opt(sbi, FLUSH_MERGE) && 
+					!sbi->sm_info->f2fs_issue_flush) {
+		dev_t dev = sbi->sb->s_bdev->bd_dev;
+		struct f2fs_sm_info *sm_info = 
+			kzalloc(sizeof(struct f2fs_sm_info), GFP_KERNEL);
+		
+		if (!sm_info) {
+			err = -ENOMEM;
+			goto restore_gc;
+		}
+		spin_lock_init(&sm_info->issue_lock);
+		init_waitqueue_head(&sm_info->flush_wait_queue);
+		sm_info->f2fs_issue_flush = kthread_run(issue_flush_thread, sbi,
+					"f2fs_flush-%u:%u", MAJOR(dev), MINOR(dev));
+		if (IS_ERR(sm_info->f2fs_issue_flush)) {
+			err = PTR_ERR(sm_info->f2fs_issue_flush);
+			sm_info->f2fs_issue_flush = NULL;
+			goto restore_gc;
 		}
 	}
 skip:
