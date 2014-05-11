@@ -95,6 +95,7 @@ static int __f2fs_convert_inline_data(struct inode *inode, struct page *page)
 	if (err)
 		goto out;
 
+	f2fs_wait_on_page_writeback(page, DATA);
 	zero_user_segment(page, MAX_INLINE_DATA, PAGE_CACHE_SIZE);
 
 	/* Copy the whole inline data block */
@@ -133,7 +134,7 @@ int f2fs_convert_inline_data(struct inode *inode, pgoff_t to_size)
 	else if (to_size <= MAX_INLINE_DATA)
 		return 0;
 
-	page = grab_cache_page_write_begin(inode->i_mapping, 0, AOP_FLAG_NOFS);
+	page = grab_cache_page(inode->i_mapping, 0);
 	if (!page)
 		return -ENOMEM;
 
@@ -156,6 +157,7 @@ int f2fs_write_inline_data(struct inode *inode,
 		return err;
 	ipage = dn.inode_page;
 
+	f2fs_wait_on_page_writeback(ipage, NODE);
 	zero_user_segment(ipage, INLINE_DATA_OFFSET,
 				 INLINE_DATA_OFFSET + MAX_INLINE_DATA);
 	src_addr = kmap(page);
@@ -174,6 +176,26 @@ int f2fs_write_inline_data(struct inode *inode,
 	f2fs_put_dnode(&dn);
 
 	return 0;
+}
+
+void truncate_inline_data(struct inode *inode, u64 from)
+{
+	struct f2fs_sb_info *sbi = F2FS_SB(inode->i_sb);
+	struct page *ipage;
+
+	if (from >= MAX_INLINE_DATA)
+		return;
+
+	ipage = get_node_page(sbi, inode->i_ino);
+	if (IS_ERR(ipage))
+		return;
+
+	f2fs_wait_on_page_writeback(ipage, NODE);
+
+	zero_user_segment(ipage, INLINE_DATA_OFFSET + from,
+				INLINE_DATA_OFFSET + MAX_INLINE_DATA);
+	set_page_dirty(ipage);
+	f2fs_put_page(ipage, 1);
 }
 
 int recover_inline_data(struct inode *inode, struct page *npage)
@@ -200,6 +222,8 @@ process_inline:
 		ipage = get_node_page(sbi, inode->i_ino);
 		f2fs_bug_on(IS_ERR(ipage));
 
+		f2fs_wait_on_page_writeback(ipage, NODE);
+
 		src_addr = inline_data_addr(npage);
 		dst_addr = inline_data_addr(ipage);
 		memcpy(dst_addr, src_addr, MAX_INLINE_DATA);
@@ -211,6 +235,7 @@ process_inline:
 	if (f2fs_has_inline_data(inode)) {
 		ipage = get_node_page(sbi, inode->i_ino);
 		f2fs_bug_on(IS_ERR(ipage));
+		f2fs_wait_on_page_writeback(ipage, NODE);
 		zero_user_segment(ipage, INLINE_DATA_OFFSET,
 				 INLINE_DATA_OFFSET + MAX_INLINE_DATA);
 		clear_inode_flag(F2FS_I(inode), FI_INLINE_DATA);
