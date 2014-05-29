@@ -128,3 +128,5 @@ obj-$(CONFIG_PSTORE)		+= pstore/
 
 # Patched by YAFFS
 obj-$(CONFIG_YAFFS_FS)		+= yaffs2/
+
+obj-$(CONFIG_EXFAT_FS)    += exfat/
