@@ -411,6 +411,19 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 	int ret = 0;
 
 	switch (prtd->codec) {
+	case FORMAT_LINEAR_PCM:
+		pr_debug("SND_AUDIOCODEC_PCM\n");
+		if (prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE)
+			bit_width = 24;
+		ret = q6asm_media_format_block_pcm_format_support_v2(
+							prtd->audio_client,
+							prtd->sample_rate,
+							prtd->num_channels,
+							bit_width, stream_id);
+		if (ret < 0)
+			pr_err("%s: CMD Format block failed\n", __func__);
+
+		break;
 	case FORMAT_MP3:
 		pr_debug("SND_AUDIOCODEC_MP3\n");
 		/* no media format block needed */
