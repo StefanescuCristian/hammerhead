@@ -1,7 +1,3 @@
-if [ $# -gt 0 ]; then
-echo $1 > .version
-fi
-
 make -j16
 
 cp arch/arm/boot/zImage-dtb ../ramdisk_hammerhead/
@@ -15,17 +11,3 @@ echo "making boot image"
 
 rm -rf ramdisk.gz
 rm -rf zImage
-
-cd ../hammerhead/
-
-zipfile="franco.Kernel-nightly.zip"
-echo "making zip file"
-cp boot.img zip/
-
-rm -rf ../ramdisk_hammerhead/boot.img
-
-cd zip/
-rm -f *.zip
-zip -r -9 $zipfile *
-rm -f /tmp/*.zip
-cp *.zip /tmp
