@@ -1,8 +1,10 @@
+make mrproper
+make franco_defconfig
+
 if [ $# -gt 0 ]; then
 echo $1 > .version
 fi
-make mrproper
-make franco_defconfig
+
 make -j16
 
 cp arch/arm/boot/zImage-dtb ../ramdisk_hammerhead/
