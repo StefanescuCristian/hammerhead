@@ -57,11 +57,6 @@ struct cpufreq_interactive_cpuinfo {
 	u64 hispeed_validate_time;
 	struct rw_semaphore enable_sem;
 	int governor_enabled;
-<<<<<<< HEAD
-=======
-	int prev_load;
-	bool minfreq_boosted;
->>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
 };
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
@@ -168,6 +163,7 @@ static void cpufreq_interactive_timer_resched(unsigned long cpu)
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
 =======
@@ -207,6 +203,8 @@ static void cpufreq_interactive_timer_start(int cpu, int time_override)
 
 >>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
 >>>>>>> 8a4bf83... cpufreq: Sync on thread migration optimizations
+=======
+>>>>>>> 906d38c... cpufreq: fix merge derp intereactive
 	spin_lock_irqsave(&pcpu->load_lock, flags);
 	pcpu->cpu_timer.expires = expires;
 	add_timer_on(&pcpu->cpu_timer, cpu);
@@ -466,18 +464,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 	 * Do not scale below floor_freq unless we have been at or above the
 	 * floor frequency for the minimum sample time since last validated.
 	 */
-<<<<<<< HEAD
-=======
-	if (sampling_down_factor && pcpu->policy->cur == pcpu->policy->max)
-		mod_min_sample_time = sampling_down_factor;
-	else
-		mod_min_sample_time = min_sample_time;
-
-	if (pcpu->minfreq_boosted) {
-		mod_min_sample_time = 0;
-		pcpu->minfreq_boosted = false;
-	}
->>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
 	if (new_freq < pcpu->floor_freq) {
 		if (now - pcpu->floor_validate_time < min_sample_time) {
 			trace_cpufreq_interactive_notyet(
@@ -1128,12 +1114,15 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			pcpu->max_freq = policy->max;
 			down_write(&pcpu->enable_sem);
 <<<<<<< HEAD
+<<<<<<< HEAD
 			del_timer_sync(&pcpu->cpu_timer);
 			del_timer_sync(&pcpu->cpu_slack_timer);
 			pcpu->last_evaluated_jiffy = get_jiffies_64();
 			cpufreq_interactive_timer_start(j);
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 906d38c... cpufreq: fix merge derp intereactive
 			expires = jiffies + usecs_to_jiffies(timer_rate);
 			pcpu->cpu_timer.expires = expires;
 			add_timer_on(&pcpu->cpu_timer, j);
@@ -1142,12 +1131,15 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 				pcpu->cpu_slack_timer.expires = expires;
 				add_timer_on(&pcpu->cpu_slack_timer, j);
 			}
+<<<<<<< HEAD
 =======
 			del_timer_sync(&pcpu->cpu_timer);
 			del_timer_sync(&pcpu->cpu_slack_timer);
 			cpufreq_interactive_timer_start(j, 0);
 >>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
 >>>>>>> 8a4bf83... cpufreq: Sync on thread migration optimizations
+=======
+>>>>>>> 906d38c... cpufreq: fix merge derp intereactive
 			pcpu->governor_enabled = 1;
 			up_write(&pcpu->enable_sem);
 		}
@@ -1214,6 +1206,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		else if (policy->min > policy->cur)
 			__cpufreq_driver_target(policy,
 					policy->min, CPUFREQ_RELATION_L);
+<<<<<<< HEAD
 <<<<<<< HEAD
 		for_each_cpu(j, policy->cpus) {
 			pcpu = &per_cpu(cpuinfo, j);
@@ -1293,6 +1286,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		}
 >>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
 >>>>>>> 8a4bf83... cpufreq: Sync on thread migration optimizations
+=======
+>>>>>>> 906d38c... cpufreq: fix merge derp intereactive
 		break;
 	}
 	return 0;
