@@ -1,3 +1,5 @@
+#!/bin/bash
+./commit.sh
 make mrproper
 make franco_defconfig
 
