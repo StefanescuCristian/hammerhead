@@ -6,13 +6,13 @@ static int
 commit_read(char *buffer, char **start, off_t offset, int size, int *eof,
                 void *data)
 {
-char *commit_str = "This kernel originates from commit 1\n";
+char *commit_str = "This kernel originates from commit 2\n";
         int len = strlen(commit_str);
         if (size < len)
                 return -EINVAL;
         if (offset != 0)
                 return 0;
-        strcpy(buffer, hello_str);
+        strcpy(buffer, commit_str);
 
         return len;
 
@@ -44,4 +44,4 @@ module_exit(commit_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stefanescu Cristian");
 MODULE_DESCRIPTION("This displays the last pushed commit before building the kernel");
-MODULE_VERSION("");
+MODULE_VERSION("1.0");
