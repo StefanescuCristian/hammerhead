@@ -89,3 +89,5 @@ boot*.img
 build.sh
 flash.sh
 zip/
+drivers/misc/build_commit.c
+commit.sh
