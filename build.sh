@@ -7,7 +7,7 @@ if [ $# -gt 0 ]; then
 echo $1 > .version
 fi
 
-make -j16
+make -j4
 
 cp arch/arm/boot/zImage-dtb ../ramdisk_hammerhead/
 
