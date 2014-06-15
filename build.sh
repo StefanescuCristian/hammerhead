@@ -37,4 +37,5 @@ rm -rf ramdisk.gz
 
 rm -rf zImage*
 
+cd ../hammerhead
 ./zip.sh
