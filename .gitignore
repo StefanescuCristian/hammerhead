@@ -91,3 +91,5 @@ flash.sh
 zip/
 drivers/misc/build_commit.c
 commit.sh
+push.sh
+private_push.sh
