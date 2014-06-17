@@ -6,7 +6,7 @@ static int
 commit_read(char *buffer, char **start, off_t offset, int size, int *eof,
                 void *data)
 {
-char *commit_str = "This kernel originates from commit 2\n";
+char *commit_str = "This kernel originates from commit aa8a30ed4ceeca58dc58a13e5a207093e3621349\n";
         int len = strlen(commit_str);
         if (size < len)
                 return -EINVAL;
