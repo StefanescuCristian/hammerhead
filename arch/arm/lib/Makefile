@@ -22,7 +22,7 @@ mmu-y	:= clear_user.o getuser.o putuser.o
 # probably faster on ARMv3 only
 ifneq ($(CONFIG_HAS_MACH_MEMUTILS),y)
   mmu-y += copy_page.o
-  lib-y += memcpy.o memmove.o
+  #lib-y += memcpy.o memmove.o
 ifeq ($(CONFIG_PREEMPT),y)
   mmu-y	+= copy_from_user.o copy_to_user.o
 else
@@ -52,7 +52,7 @@ $(obj)/csumpartialcopy.o:	$(obj)/csumpartialcopygeneric.S
 $(obj)/csumpartialcopyuser.o:	$(obj)/csumpartialcopygeneric.S
 
 ifeq ($(CONFIG_KERNEL_MODE_NEON),y)
-  NEON_FLAGS			:= -mfloat-abi=softfp -mfpu=neon
+  NEON_FLAGS			:= -mfloat-abi=hard -mfpu=neon
   CFLAGS_xor-neon.o		+= $(NEON_FLAGS)
   lib-$(CONFIG_XOR_BLOCKS)	+= xor-neon.o
 endif
