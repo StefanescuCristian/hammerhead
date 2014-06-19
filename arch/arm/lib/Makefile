@@ -52,11 +52,7 @@ $(obj)/csumpartialcopy.o:	$(obj)/csumpartialcopygeneric.S
 $(obj)/csumpartialcopyuser.o:	$(obj)/csumpartialcopygeneric.S
 
 ifeq ($(CONFIG_KERNEL_MODE_NEON),y)
-<<<<<<< HEAD
   NEON_FLAGS			:= -mfloat-abi=hard -mfpu=neon-vfpv4
-=======
-  NEON_FLAGS			:= -mfloat-abi=softfp -mfpu=neon
->>>>>>> parent of 562420b... Make use of glibc versions of memcopy,memmove. Taken from here https://github.com/faux123/Nexus_5/issues/6
   CFLAGS_xor-neon.o		+= $(NEON_FLAGS)
   lib-$(CONFIG_XOR_BLOCKS)	+= xor-neon.o
 endif
