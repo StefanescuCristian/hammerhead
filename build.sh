@@ -1,5 +1,4 @@
 #!/bin/bash
-./commit.sh
 make mrproper
 make franco_defconfig
 
@@ -38,4 +37,8 @@ rm -rf ramdisk.gz
 rm -rf zImage*
 
 cd ../hammerhead
-./zip.sh
+
+if [ -e boot-v"$version" ]; then
+	rm *.img *.zip
+	./zip.sh
+fi
