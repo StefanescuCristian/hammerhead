@@ -1484,7 +1484,7 @@ static struct request *bfq_check_fifo(struct bfq_queue *bfqq)
 
 	rq = rq_entry_fifo(bfqq->fifo.next);
 
-	if (time_before(jiffies, rq_fifo_time(rq)))
+	if (time_before_eq(jiffies, rq_fifo_time(rq)))
 		return NULL;
 
 	return rq;
