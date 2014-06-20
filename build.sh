@@ -47,3 +47,5 @@ fi
 if [ -e "boot-v"$version".img" ]; then
 	./zip.sh
 fi
+
+rm arch/arm/boot/zImage*
