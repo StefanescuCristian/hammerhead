@@ -8,6 +8,7 @@ fi
 
 make -j4
 
+if [ -e arch/arm/boot/zImage-dtb ]; then
 cp arch/arm/boot/zImage-dtb ../ramdisk_hammerhead/
 
 cd ../ramdisk_hammerhead/
@@ -37,8 +38,10 @@ rm -rf ramdisk.gz
 rm -rf zImage*
 
 cd ../hammerhead
+fi
 
 if [ -e boot-v"$version" ]; then
-	rm *.img *.zip
+	rm *.img
+	rm *.zip
 	./zip.sh
 fi
