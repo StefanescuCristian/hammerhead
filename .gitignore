@@ -90,7 +90,6 @@ build.sh
 flash.sh
 zip/
 *.zip
-drivers/misc/build_commit.c
-commit.sh
 push.sh
 private_push.sh
+test_push.sh
