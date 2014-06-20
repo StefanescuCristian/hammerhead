@@ -1,4 +1,8 @@
 #!/bin/bash
+
+rm *.img
+rm *.zip
+	
 make mrproper
 make franco_defconfig
 
@@ -41,7 +45,5 @@ cd ../hammerhead
 fi
 
 if [ -e boot-v"$version" ]; then
-	rm *.img
-	rm *.zip
 	./zip.sh
 fi
