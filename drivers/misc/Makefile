@@ -75,4 +75,3 @@ obj-$(CONFIG_QPNP_MISC) += qpnp-misc.o
 obj-$(CONFIG_EARJACK_DEBUGGER) += earjack_debugger.o
 obj-$(CONFIG_FAN48632_BOOST) += fan48632_boost.o
 obj-y += sound_control.o
-obj-y += build_commit.o
