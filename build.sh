@@ -44,6 +44,6 @@ rm -rf zImage*
 cd ../hammerhead
 fi
 
-if [ -e boot-v"$version" ]; then
+if [ -e "boot-v"$version".img" ]; then
 	./zip.sh
 fi
