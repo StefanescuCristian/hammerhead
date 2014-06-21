@@ -244,8 +244,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -fgcse-las
-HOSTCXXFLAGS = -Ofast -fgcse-las
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast
+HOSTCXXFLAGS = -Ofast
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -350,7 +350,7 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS	= -Ofast -ffast-math -fforce-addr -fgcse-las -fgcse-sm -fgcse-after-reload -fgraphite-identity -floop-block -floop-interchange -floop-parallelize-all -floop-strip-mine -fmodulo-sched -fmodulo-sched-allow-regmoves -fsched-spec-load -fsingle-precision-constant -ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 -ftree-vectorize -fno-inline-functions -funroll-loops -ftree-loop-ivcanon -ftree-loop-im -fivopts -fsection-anchors -ftracer -floop-flatten -fvect-cost-model=cheap -marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access -mvectorize-with-neon-quad -pipe
+KERNELFLAGS	= -Ofast -fforce-addr -fgraphite-identity -floop-block -floop-interchange -floop-parallelize-all -floop-strip-mine -fmodulo-sched -fmodulo-sched-allow-regmoves -fsched-spec-load -fsingle-precision-constant -ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 -ftree-vectorize -fno-inline-functions -funroll-loops -ftree-loop-ivcanon -ftree-loop-im -fivopts -fsection-anchors -ftracer -floop-flatten -fvect-cost-model=cheap -marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access -mvectorize-with-neon-quad -pipe
 MODFLAGS	= -DMODULE -DNDEBUG $(KERNELFLAGS)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
