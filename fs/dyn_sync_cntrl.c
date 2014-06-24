@@ -18,11 +18,7 @@
 #include <linux/module.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
-<<<<<<< HEAD
-#include <linux/earlysuspend.h>
-=======
 #include <linux/powersuspend.h>
->>>>>>> 78b175f... fs/dyn_sync_cntrl: dynamic sync control
 #include <linux/mutex.h>
 #include <linux/notifier.h>
 #include <linux/reboot.h>
