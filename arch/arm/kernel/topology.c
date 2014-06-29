@@ -90,9 +90,22 @@ void set_power_scale(unsigned int cpu, unsigned int power)
 int topology_register_notifier(struct notifier_block *nb)
 {
 
-	return atomic_notifier_chain_register(
-				&topology_update_notifier_list, nb);
-}
+/*
+ * Table of relative efficiency of each processors
+ * The efficiency value must fit in 20bit and the final
+ * cpu_scale value must be in the range
+ *   0 < cpu_scale < 3*SCHED_POWER_SCALE/2
+ * in order to return at most 1 when DIV_ROUND_CLOSEST
+ * is used to compute the capacity of a CPU.
+ * Processors that are not defined in the table,
+ * use the default SCHED_POWER_SCALE value for cpu_scale.
+ */
+static const struct cpu_efficiency table_efficiency[] = {
+	{"qcom,krait", 3891},
+	{"arm,cortex-a15", 3891},
+	{"arm,cortex-a7",  2048},
+	{NULL, },
+};
 
 int topology_unregister_notifier(struct notifier_block *nb)
 {
