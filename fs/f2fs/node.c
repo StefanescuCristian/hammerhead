@@ -51,28 +51,6 @@ bool available_free_memory(struct f2fs_sb_info *sbi, int type)
 	return res;
 }
 
-bool available_free_memory(struct f2fs_sb_info *sbi, int type)
-{
-	struct f2fs_nm_info *nm_i = NM_I(sbi);
-	struct sysinfo val;
-	unsigned long mem_size = 0;
-	bool res = false;
-
-	si_meminfo(&val);
-	/* give 25%, 25%, 50% memory for each components respectively */
-	if (type == FREE_NIDS) {
-		mem_size = (nm_i->fcnt * sizeof(struct free_nid)) >> 12;
-		res = mem_size < ((val.totalram * nm_i->ram_thresh / 100) >> 2);
-	} else if (type == NAT_ENTRIES) {
-		mem_size = (nm_i->nat_cnt * sizeof(struct nat_entry)) >> 12;
-		res = mem_size < ((val.totalram * nm_i->ram_thresh / 100) >> 2);
-	} else if (type == DIRTY_DENTS) {
-		mem_size = get_pages(sbi, F2FS_DIRTY_DENTS);
-		res = mem_size < ((val.totalram * nm_i->ram_thresh / 100) >> 1);
-	}
-	return res;
-}
-
 static void clear_node_page_dirty(struct page *page)
 {
 	struct address_space *mapping = page->mapping;
@@ -186,7 +164,6 @@ void fsync_mark_clear(struct f2fs_sb_info *sbi, nid_t nid)
 	write_unlock(&nm_i->nat_tree_lock);
 }
 
->>>>>>> 3109598... fs: f2fs: Merge upstream updates
 static struct nat_entry *grab_nat_entry(struct f2fs_nm_info *nm_i, nid_t nid)
 {
 	struct nat_entry *new;
