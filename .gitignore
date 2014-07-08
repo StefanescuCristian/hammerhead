@@ -91,6 +91,7 @@ build.sh
 flash.sh
 zip/
 *.zip
+!zip_cm
 push.sh
 private_push.sh
 test_push.sh
