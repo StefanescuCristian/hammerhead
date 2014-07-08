@@ -1,0 +1,39 @@
+Manifest-Version: 1.0
+Created-By: 1.0 (Android SignApk)
+
+Name: system/lib/libmemalloc.so
+SHA1-Digest: TkRTYOP8u7cqmCpQy+xhFy19WgU=
+
+Name: system/lib/hw/memtrack.msm8974.so
+SHA1-Digest: 0RnXihMlcUiaZ8rQMYClhm785wA=
+
+Name: system/lib/hw/hwcomposer.msm8974.so
+SHA1-Digest: Lz9NI6jnK3HZYDd5FYA750kk3i4=
+
+Name: system/lib/libqservice.so
+SHA1-Digest: D4Ua/DW5Os9RkTrvVdyGMXYThGw=
+
+Name: system/lib/hw/gralloc.msm8974.so
+SHA1-Digest: HPh+j5AQqFxTmLZXQHL196rKiys=
+
+Name: META-INF/com/google/android/updater-script
+SHA1-Digest: dJ28CtpVMuUHiCDFhXhGe1Jha78=
+
+Name: system/lib/libexternal.so
+SHA1-Digest: hpKI4vC3LoIj8qQOOLFcnHLt4A8=
+
+Name: system/lib/hw/gralloc.default.so
+SHA1-Digest: PEbivDVI30C+xtN03yz8gDJbnL8=
+
+Name: system/lib/libmemtrack.so
+SHA1-Digest: 3mFXR3rSXY4Piic8HOY87gD43bk=
+
+Name: system/lib/liboverlay.so
+SHA1-Digest: dBb/YbER/e0FcOfR/ncysWsHdaA=
+
+Name: system/lib/libqdutils.so
+SHA1-Digest: R0BhWtxO338gONd8c904LRaGono=
+
+Name: META-INF/com/google/android/update-binary
+SHA1-Digest: sOTun8o+qgW+fXMYLow+mOYYv9M=
+

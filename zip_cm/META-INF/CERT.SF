@@ -1,0 +1,40 @@
+Signature-Version: 1.0
+Created-By: 1.0 (Android SignApk)
+SHA1-Digest-Manifest: 0Y+QMAlACrT8PZQQpy3HLynGwOM=
+
+Name: system/lib/hw/memtrack.msm8974.so
+SHA1-Digest: erIqyOX5Mdud8ALRQc/+rW2azdI=
+
+Name: system/lib/libmemalloc.so
+SHA1-Digest: 7sD1hPqT72MyHcV/XUOTYLxDL34=
+
+Name: system/lib/hw/hwcomposer.msm8974.so
+SHA1-Digest: iE77Dp+ooKn7JFko0LeUGFR8wjE=
+
+Name: system/lib/libqservice.so
+SHA1-Digest: JT1YUobYKTdSFcfN0n7l0kLajls=
+
+Name: system/lib/hw/gralloc.msm8974.so
+SHA1-Digest: wtkCM84fG3fd/Q0ygINvSZ8Hwuc=
+
+Name: META-INF/com/google/android/updater-script
+SHA1-Digest: dbR0MzVFwGsa5IxcROhJDBBTbf0=
+
+Name: system/lib/hw/gralloc.default.so
+SHA1-Digest: uUZd8D0Vu2rj8a/nab2I97XFczQ=
+
+Name: system/lib/libexternal.so
+SHA1-Digest: LBa14i3rb+V1vGFAOe5/BAlyrPU=
+
+Name: system/lib/libmemtrack.so
+SHA1-Digest: Iu+JM740YY2VUQwQGVxq84otBBM=
+
+Name: system/lib/liboverlay.so
+SHA1-Digest: z91WyUwW/uKfGAwY96MmwHlHn34=
+
+Name: system/lib/libqdutils.so
+SHA1-Digest: n0cOOs+2BslNHmHXBOzc8z0RLos=
+
+Name: META-INF/com/google/android/update-binary
+SHA1-Digest: 4lnWlqPcs9hpDwzWw4qKB7rStuQ=
+

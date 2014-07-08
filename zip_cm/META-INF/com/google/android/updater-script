@@ -1,0 +1,9 @@
+ui_print("");
+package_extract_file("boot.img", "/dev/block/platform/msm_sdcc.1/by-name/boot");
+ui_print("Thank you for installing my kernel, enjoy it!");
+set_progress(0.500000);
+ui_print("Extracting System Files...");
+mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
+package_extract_dir("system", "/system");
+unmount("/system");
+set_progress(0.100000);
