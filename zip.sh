@@ -21,3 +21,10 @@ cp ../boot-f2fs-all-v"$version".img boot.img
 zip -r -9 "$zipname"-f2fs-all-v"$version".zip *
 mv *.zip ../
 rm *.img
+
+#CM
+cd ../zip_cm
+cp ../boot-v"$version".img boot.img
+zip -r -9 "$zipname"-cm-v"$version".zip *
+mv *.zip ../
+rm *.img
