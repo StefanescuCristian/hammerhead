@@ -9,8 +9,8 @@ make franco_defconfig
 if [ $# -gt 0 ]; then
 echo $1 > .version
 fi
-
-make -j4
+J=$(echo $(($(grep processor /proc/cpuinfo | wc -l) + 1)))
+make -j"$J"
 
 if [ -e arch/arm/boot/zImage-dtb ]; then
 cp arch/arm/boot/zImage-dtb ../ramdisk_hammerhead/
