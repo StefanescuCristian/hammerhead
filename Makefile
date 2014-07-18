@@ -350,7 +350,7 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS	= -Ofast -fforce-addr -fgraphite-identity -floop-block -floop-interchange -floop-parallelize-all -floop-strip-mine -fmodulo-sched -fmodulo-sched-allow-regmoves -fsched-spec-load -fsingle-precision-constant -ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 -ftree-vectorize -fno-inline-functions -funroll-loops -funsafe-loop-optimizations -ftree-loop-ivcanon -ftree-loop-im -fivopts -fsection-anchors -ftracer -floop-flatten -fvect-cost-model=cheap -marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access -mvectorize-with-neon-quad -pipe
+KERNELFLAGS	= -Ofast -fforce-addr -fgraphite-identity -floop-block -floop-interchange -floop-parallelize-all -floop-strip-mine -fmodulo-sched -fmodulo-sched-allow-regmoves -fsched-spec-load -fsingle-precision-constant -ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 -ftree-vectorize -fno-inline-functions -funroll-loops -fpeel-loops -funsafe-loop-optimizations -ftree-loop-ivcanon -ftree-loop-im -fivopts -fsection-anchors -ftracer -floop-flatten -fvect-cost-model=cheap -funit-at-a-time -marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access -mvectorize-with-neon-quad -pipe
 MODFLAGS	= -DMODULE -DNDEBUG $(KERNELFLAGS)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
