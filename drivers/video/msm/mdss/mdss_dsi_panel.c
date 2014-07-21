@@ -387,9 +387,14 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 		ctrl->off_cmds.cmds[1].payload[0] = 0x10;
 	}
 #endif
+	mutex_lock(&panel_cmd_mutex);
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds);
 	mutex_unlock(&panel_cmd_mutex);
+
+#ifdef CONFIG_POWERSUSPEND
+	set_power_suspend_state_panel_hook(POWER_SUSPEND_ACTIVE);
+#endif
 
 	pr_info("%s:\n", __func__);
 	return 0;
