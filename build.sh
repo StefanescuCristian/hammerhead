@@ -4,7 +4,7 @@ rm *.img
 rm *.zip
 	
 make mrproper
-make franco_defconfig
+make big-bum_defconfig
 
 if [ $# -gt 0 ]; then
 echo $1 > .version
