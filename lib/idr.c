@@ -464,7 +464,7 @@ void idr_remove_all(struct idr *idp)
 
 	n = idp->layers * IDR_BITS;
 	p = idp->top;
-	RCU_INIT_POINTER(idp->top, NULL);
+	rcu_assign_pointer(idp->top, NULL);
 	max = idr_max(idp->layers);
 
 	id = 0;
@@ -480,7 +480,7 @@ void idr_remove_all(struct idr *idp)
 		/* Get the highest bit that the above add changed from 0->1. */
 		while (n < fls(id ^ bt_mask)) {
 			if (p)
-				free_layer(idp, p);
+				free_layer(p);
 			n += IDR_BITS;
 			p = *--paa;
 		}
