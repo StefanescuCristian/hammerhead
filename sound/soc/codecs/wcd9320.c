@@ -4342,7 +4342,7 @@ static int taiko_write(struct snd_soc_codec *codec, unsigned int reg,
 {
 	int ret;
 	int val;
-#endif
+
 	struct wcd9xxx *wcd9xxx;
 
 	if (!codec)
