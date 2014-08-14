@@ -16,7 +16,7 @@
  */
 #include <linux/msm_audio_amrwbplus.h>
 #include "audio_utils_aio.h"
-
+/*
 #ifdef CONFIG_DEBUG_FS
 static const struct file_operations audio_amrwbplus_debug_fops = {
 	.read = audio_aio_debug_read,
@@ -40,7 +40,7 @@ static void config_debug_fs(struct q6audio_aio *)
 {
 }
 #endif
-
+*/
 static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	struct asm_amrwbplus_cfg q6_amrwbplus_cfg;
@@ -204,7 +204,7 @@ static int audio_open(struct inode *inode, struct file *file)
 		goto fail;
 	}
 
-	config_debug_fs(audio);
+	//config_debug_fs(audio);
 	pr_debug("%s: AMRWBPLUS dec success mode[%d]session[%d]\n", __func__,
 		audio->feedback,
 		audio->ac->session);
