@@ -12,6 +12,8 @@
  * optimize more, generalize for n cores, Sep. 2013, http://goo.gl/448qBz
  * generalize for all arch, rename as autosmp, Dec. 2013, http://goo.gl/x5oyhy
  *
+ * Copyright (C) 2014 engstk <eng.stk@sapo.pt> (hammerhead port and changes)
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -21,7 +23,7 @@
  */
 
 #include <linux/moduleparam.h>
-#include <linux/earlysuspend.h>
+#include <linux/lcd_notify.h>
 #include <linux/cpufreq.h>
 #include <linux/workqueue.h>
 #include <linux/cpu.h>
@@ -40,6 +42,8 @@ struct asmp_cpudata_t {
 static struct delayed_work asmp_work;
 static struct workqueue_struct *asmp_workq;
 static DEFINE_PER_CPU(struct asmp_cpudata_t, asmp_cpudata);
+
+struct notifier_block notify;
 
 static struct asmp_param_struct {
 	unsigned int delay;
@@ -116,7 +120,7 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
 			   msecs_to_jiffies(asmp_param.delay));
 }
 
-static void asmp_early_suspend(struct early_suspend *h) {
+static void asmp_lcd_suspend(void) {
 	int cpu;
 
 	/* unplug online cpu cores */
@@ -132,7 +136,7 @@ static void asmp_early_suspend(struct early_suspend *h) {
 	pr_info(ASMP_TAG"suspended\n");
 }
 
-static void __cpuinit asmp_late_resume(struct early_suspend *h) {
+static void __cpuinit asmp_lcd_resume(void) {
 	int cpu;
 
 	/* hotplug offline cpu cores */
@@ -148,12 +152,6 @@ static void __cpuinit asmp_late_resume(struct early_suspend *h) {
 
 	pr_info(ASMP_TAG"resumed\n");
 }
-
-static struct early_suspend __refdata asmp_early_suspend_handler = {
-	.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN,
-	.suspend = asmp_early_suspend,
-	.resume = asmp_late_resume,
-};
 
 static int __cpuinit set_enabled(const char *val, const struct kernel_param *kp) {
 	int ret;
@@ -172,6 +170,26 @@ static int __cpuinit set_enabled(const char *val, const struct kernel_param *kp)
 		pr_info(ASMP_TAG"disabled\n");
 	}
 	return ret;
+}
+
+static int __ref lcd_notifier_callback(struct notifier_block *this,
+				unsigned long event, void *data)
+{
+	switch (event) {
+	case LCD_EVENT_ON_END:
+	case LCD_EVENT_OFF_START:
+		break;
+	case LCD_EVENT_ON_START:
+		asmp_lcd_resume();
+		break;
+	case LCD_EVENT_OFF_END:
+		asmp_lcd_suspend();
+		break;
+	default:
+		break;
+	}
+
+	return NOTIFY_OK;
 }
 
 static struct kernel_param_ops module_ops = {
@@ -286,8 +304,6 @@ static int __init asmp_init(void) {
 		queue_delayed_work(asmp_workq, &asmp_work,
 				   msecs_to_jiffies(ASMP_STARTDELAY));
 
-	register_early_suspend(&asmp_early_suspend_handler);
-
 	asmp_kobject = kobject_create_and_add("autosmp", kernel_kobj);
 	if (asmp_kobject) {
 		rc = sysfs_create_group(asmp_kobject, &asmp_attr_group);
@@ -301,6 +317,10 @@ static int __init asmp_init(void) {
 	} else
 		pr_warn(ASMP_TAG"ERROR, create sysfs kobj");
 
+	notify.notifier_call = lcd_notifier_callback;
+	if (lcd_register_client(&notify) != 0)
+		pr_warn(ASMP_TAG"lcd client register error\n");
+		
 	pr_info(ASMP_TAG"initialized\n");
 	return 0;
 }
