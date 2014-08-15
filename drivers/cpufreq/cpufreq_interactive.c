@@ -159,7 +159,7 @@ static unsigned int up_threshold_any_cpu_load = 95;
 static unsigned int sync_freq = CPU_SYNC_FREQ;
 static unsigned int up_threshold_any_cpu_freq = 1190400;
 
-#define DOWN_LOW_LOAD_THRESHOLD 5
+#define DOWN_LOW_LOAD_THRESHOLD 10 
 
 static void cpufreq_interactive_timer_resched(
 	struct cpufreq_interactive_cpuinfo *pcpu)
