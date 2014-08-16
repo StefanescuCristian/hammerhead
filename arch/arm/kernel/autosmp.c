@@ -44,6 +44,7 @@ static struct workqueue_struct *asmp_workq;
 static DEFINE_PER_CPU(struct asmp_cpudata_t, asmp_cpudata);
 
 struct notifier_block notify;
+static struct work_struct suspend, resume;
 
 static struct asmp_param_struct {
 	unsigned int delay;
@@ -69,6 +70,9 @@ static unsigned int cycle = 0;
 static int enabled __read_mostly = 1;
 
 static void __cpuinit asmp_work_fn(struct work_struct *work) {
+	if (!enabled)
+		return;
+	
 	unsigned int cpu = 0, slow_cpu = 0;
 	unsigned int rate, cpu0_rate, slow_rate = UINT_MAX, fast_rate;
 	int nr_cpu_online;
@@ -120,23 +124,25 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
 			   msecs_to_jiffies(asmp_param.delay));
 }
 
-static void asmp_lcd_suspend(void) {
-	int cpu;
+static void asmp_lcd_suspend(struct work_struct *work) {
+	if (!enabled)
+		return;
 
+	int cpu;
+		
 	/* unplug online cpu cores */
 	if (asmp_param.scroff_single_core)
 		for (cpu = 1; cpu < nr_cpu_ids; cpu++)
 			if (cpu_online(cpu))
 				cpu_down(cpu);
 
-	/* suspend main work thread */
-	if (enabled)
-		cancel_delayed_work_sync(&asmp_work);
-
 	pr_info(ASMP_TAG"suspended\n");
 }
 
-static void __cpuinit asmp_lcd_resume(void) {
+static void __ref asmp_lcd_resume(struct work_struct *work) {
+	if (!enabled)
+		return;
+	
 	int cpu;
 
 	/* hotplug offline cpu cores */
@@ -144,11 +150,6 @@ static void __cpuinit asmp_lcd_resume(void) {
 		for (cpu = 1; cpu < nr_cpu_ids; cpu++)
 			if (!cpu_online(cpu))
 				cpu_up(cpu);
-
-	/* resume main work thread */
-	if (enabled)
-		queue_delayed_work(asmp_workq, &asmp_work,
-				msecs_to_jiffies(asmp_param.delay));
 
 	pr_info(ASMP_TAG"resumed\n");
 }
@@ -172,7 +173,7 @@ static int __cpuinit set_enabled(const char *val, const struct kernel_param *kp)
 	return ret;
 }
 
-static int __ref lcd_notifier_callback(struct notifier_block *this,
+static int __cpuinit lcd_notifier_callback(struct notifier_block *this,
 				unsigned long event, void *data)
 {
 	switch (event) {
@@ -180,10 +181,10 @@ static int __ref lcd_notifier_callback(struct notifier_block *this,
 	case LCD_EVENT_OFF_START:
 		break;
 	case LCD_EVENT_ON_START:
-		asmp_lcd_resume();
+		queue_work_on(0, asmp_workq, &resume);
 		break;
 	case LCD_EVENT_OFF_END:
-		asmp_lcd_suspend();
+		queue_work_on(0, asmp_workq, &suspend);
 		break;
 	default:
 		break;
@@ -296,10 +297,18 @@ static int __init asmp_init(void) {
 	for_each_possible_cpu(cpu)
 		per_cpu(asmp_cpudata, cpu).times_hotplugged = 0;
 
-	asmp_workq = alloc_workqueue("asmp", WQ_HIGHPRI, 0);
+	notify.notifier_call = lcd_notifier_callback;
+	if (lcd_register_client(&notify) != 0)
+		pr_warn(ASMP_TAG"lcd client register error\n");
+		
+	asmp_workq = alloc_workqueue("asmp", WQ_FREEZABLE, 1);
 	if (!asmp_workq)
 		return -ENOMEM;
+	
+	INIT_WORK(&resume, asmp_lcd_resume);
+	INIT_WORK(&suspend, asmp_lcd_suspend);
 	INIT_DELAYED_WORK(&asmp_work, asmp_work_fn);
+	
 	if (enabled)
 		queue_delayed_work(asmp_workq, &asmp_work,
 				   msecs_to_jiffies(ASMP_STARTDELAY));
@@ -316,10 +325,6 @@ static int __init asmp_init(void) {
 #endif
 	} else
 		pr_warn(ASMP_TAG"ERROR, create sysfs kobj");
-
-	notify.notifier_call = lcd_notifier_callback;
-	if (lcd_register_client(&notify) != 0)
-		pr_warn(ASMP_TAG"lcd client register error\n");
 		
 	pr_info(ASMP_TAG"initialized\n");
 	return 0;
