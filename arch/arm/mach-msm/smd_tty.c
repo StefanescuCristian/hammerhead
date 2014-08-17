@@ -893,7 +893,6 @@ static int __init smd_tty_core_init(void)
 				"%s: Unable to create device attributes for %s",
 				__func__, smd_configs[n].port_name);
 
-<<<<<<< HEAD
 		init_completion(&smd_tty[idx].ch_allocated);
 
 		/* register platform device */
@@ -915,8 +914,6 @@ static int __init smd_tty_core_init(void)
 		init_waitqueue_head(&smd_tty[idx].ch_opened_wait_queue);
 		ret = platform_driver_register(&smd_tty[idx].driver);
 
-=======
->>>>>>> 99e8872... msm: smd_tty: add device tree support to smd_tty drivers
 		if (ret) {
 			SMD_TTY_ERR(
 				"%s: init failed %d (%d)", __func__, idx, ret);
