@@ -70,12 +70,17 @@ static unsigned int cycle = 0;
 static int enabled __read_mostly = 1;
 
 static void __cpuinit asmp_work_fn(struct work_struct *work) {
+	
+	unsigned int cpu = 0;
+	unsigned int slow_cpu = 0;
+	unsigned int rate;
+	unsigned int cpu0_rate;
+	unsigned int slow_rate = UINT_MAX;
+	unsigned int fast_rate;
+	int nr_cpu_online;
+
 	if (!enabled)
 		return;
-	
-	unsigned int cpu = 0, slow_cpu = 0;
-	unsigned int rate, cpu0_rate, slow_rate = UINT_MAX, fast_rate;
-	int nr_cpu_online;
 
 	cycle++;
 	/* find max and min cpu freq to estimate load */
@@ -125,10 +130,11 @@ static void __cpuinit asmp_work_fn(struct work_struct *work) {
 }
 
 static void asmp_lcd_suspend(struct work_struct *work) {
-	if (!enabled)
-		return;
 
 	int cpu;
+
+	if (!enabled)
+		return;
 		
 	/* unplug online cpu cores */
 	if (asmp_param.scroff_single_core)
@@ -140,11 +146,12 @@ static void asmp_lcd_suspend(struct work_struct *work) {
 }
 
 static void __ref asmp_lcd_resume(struct work_struct *work) {
+
+	int cpu;
+
 	if (!enabled)
 		return;
 	
-	int cpu;
-
 	/* hotplug offline cpu cores */
 	if (asmp_param.scroff_single_core)
 		for (cpu = 1; cpu < nr_cpu_ids; cpu++)
