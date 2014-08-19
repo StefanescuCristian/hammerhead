@@ -468,7 +468,11 @@ static void cpufreq_interactive_timer(unsigned long data)
 			new_freq = boosted_freq;
 		else
 		{
+			#ifdef CONFIG_MAKO_HOTFPLUG
 			new_freq = calc_freq(pcpu, cpu_load);
+			#else
+			new_freq = choose_freq(pcpu, loadadjfreq);
+			#endif
 			if (new_freq < boosted_freq)
 				new_freq = boosted_freq;
 		}
