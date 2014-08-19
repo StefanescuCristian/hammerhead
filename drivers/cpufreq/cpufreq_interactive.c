@@ -385,7 +385,7 @@ static unsigned int choose_freq(
 
 	return freq;
 }
-
+#ifdef CONFIG_MAKO_HOTPLUG
 static unsigned int calc_freq(struct cpufreq_interactive_cpuinfo *pcpu,
 	unsigned int load)
 {
@@ -394,7 +394,7 @@ static unsigned int calc_freq(struct cpufreq_interactive_cpuinfo *pcpu,
 
 	return min + load * (max - min) / 100;
 }
-
+#endif
 static u64 update_load(int cpu)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu = &per_cpu(cpuinfo, cpu);
@@ -478,7 +478,11 @@ static void cpufreq_interactive_timer(unsigned long data)
 	}
 	else
 	{
+		#ifdef CONFIG_MAKO_HOTPLUG
 		new_freq = calc_freq(pcpu, cpu_load);
+		#else
+		new_freq = choose_freq(pcpu, loadadjfreq);
+		#endif
 		if (new_freq > boosted_freq &&
 				pcpu->target_freq < boosted_freq)
 			new_freq = boosted_freq;
@@ -528,12 +532,12 @@ static void cpufreq_interactive_timer(unsigned long data)
 
 	pcpu->hispeed_validate_time = now;
 
-	if (cpufreq_frequency_table_target(pcpu->policy, pcpu->freq_table,
-					   new_freq, CPUFREQ_RELATION_C,
-					   &index)) {
-		spin_unlock_irqrestore(&pcpu->target_freq_lock, flags);
-		goto rearm;
-	}
+        if (cpufreq_frequency_table_target(pcpu->policy, pcpu->freq_table,
+                                           new_freq, CPUFREQ_RELATION_C,
+                                           &index)) {
+                spin_unlock_irqrestore(&pcpu->target_freq_lock, flags);
+                goto rearm;
+        }
 
 	new_freq = pcpu->freq_table[index].frequency;
 
