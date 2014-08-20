@@ -38,8 +38,8 @@ static inline void init_cpu_topology(void) { }
 static inline void store_cpu_topology(unsigned int cpuid) { }
 
 static inline void set_power_scale(unsigned int cpu, unsigned int power) { }
-static inline int topology_register_notifier(struct notifier_block *nb)  { }
-static inline int topology_unregister_notifier(struct notifier_block *nb)  { }
+static inline int topology_register_notifier(struct notifier_block *nb)  { return 0; }
+static inline int topology_unregister_notifier(struct notifier_block *nb)  { return 0; }
 
 #endif
 
