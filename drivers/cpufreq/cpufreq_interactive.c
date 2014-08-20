@@ -159,7 +159,9 @@ static unsigned int up_threshold_any_cpu_load = 65;
 static unsigned int sync_freq = CPU_SYNC_FREQ;
 static unsigned int up_threshold_any_cpu_freq = 1190400;
 
+#ifdef CONFIG_MAKO_HOTPLUG
 #define DOWN_LOW_LOAD_THRESHOLD 5
+#endif
 static bool idle_notifier = false;
 
 static void cpufreq_interactive_timer_resched(
@@ -477,9 +479,11 @@ static void cpufreq_interactive_timer(unsigned long data)
 				new_freq = boosted_freq;
 		}
 	}
+	#ifdef CONFIG_MAKO_HOTPLUG
 	else if (cpu_load <= DOWN_LOW_LOAD_THRESHOLD) {
 		new_freq = pcpu->policy->cpuinfo.min_freq;
 	}
+	#endif
 	else
 	{
 		#ifdef CONFIG_MAKO_HOTPLUG
