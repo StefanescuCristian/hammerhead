@@ -90,6 +90,24 @@
 #define WCD9XXX_MEAS_DELTA_MAX_MV 50
 #define WCD9XXX_MEAS_INVALD_RANGE_LOW_MV 20
 #define WCD9XXX_MEAS_INVALD_RANGE_HIGH_MV 80
+
+/*
+ * Invalid voltage range for the detection
+ * of plug type with current source
+ */
+#define WCD9XXX_CS_MEAS_INVALD_RANGE_LOW_MV 160
+#define WCD9XXX_CS_MEAS_INVALD_RANGE_HIGH_MV 265
+
+#define HPH_TRANS_THRESHOLD 2
+
+/*
+ * Threshold used to detect euro headset
+ * with current source
+ */
+#define WCD9XXX_CS_GM_SWAP_THRES_MIN_MV 10
+#define WCD9XXX_CS_GM_SWAP_THRES_MAX_MV 40
+
+#define WCD9XXX_MBHC_NSC_CS 9
 #define WCD9XXX_GM_SWAP_THRES_MIN_MV 150
 #define WCD9XXX_GM_SWAP_THRES_MAX_MV 650
 #define WCD9XXX_THRESHOLD_MIC_THRESHOLD 200
@@ -2216,6 +2234,8 @@ static void wcd9xxx_correct_swch_plug(struct work_struct *work)
 	enum wcd9xxx_mbhc_plug_type plug_type = PLUG_TYPE_INVALID;
 	unsigned long timeout;
 	int retry = 0, pt_gnd_mic_swap_cnt = 0;
+	int highhph_cnt = 0;
+	int hph_trans_cnt = 0;
 	bool correction = false;
 
 	pr_debug("%s: enter\n", __func__);
@@ -2302,6 +2322,13 @@ static void wcd9xxx_correct_swch_plug(struct work_struct *work)
 				}
 			} else
 				pt_gnd_mic_swap_cnt = 0;
+
+			if (plug_type == PLUG_TYPE_HEADSET) {
+				hph_trans_cnt++;
+				if (hph_trans_cnt < HPH_TRANS_THRESHOLD)
+					continue;
+			} else
+				hph_trans_cnt = 0;
 
 			WCD9XXX_BCL_LOCK(mbhc->resmgr);
 			/* Turn off override */
