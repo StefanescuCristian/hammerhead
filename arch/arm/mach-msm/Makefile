@@ -444,3 +444,5 @@ CFLAGS_msm_ipc_router_security.o := -fno-strict-aliasing
 CFLAGS_rpm_log.o := -fno-strict-aliasing
 endif
 obj-$(CONFIG_HAS_MACH_MEMUTILS) += memutils/
+
+obj-$(CONFIG_MSM_HOTPLUG) += msm_hotplug.o
