@@ -149,7 +149,7 @@ static __cpuinit void load_timer(struct work_struct *work)
 	avg_load /= num_online_cpus();
 	
 #if DEBUG
-	pr_debug("%s: avg_load: %u, num_online_cpus: %u\n", __func__, avg_load, cpus_online);
+	pr_debug("%s: avg_load: %u, num_online_cpus: %u\n", __func__, avg_load, num_online_cpus());
 	pr_debug("%s: up_timer: %u, down_timer: %u\n", __func__, up_timer, down_timer);
 #endif
 
