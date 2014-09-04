@@ -88,3 +88,4 @@ obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX_RMI4_DEV)	+= synaptics_rmi_dev.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX_FW_UPDATE) 	+= synaptics_fw_update.o
 obj-y += touchboost.o
 obj-$(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) 	+= doubletap2wake.o
+obj-$(CONFIG_WAKE_TIMEOUT) 	+= wake_timeout.o
