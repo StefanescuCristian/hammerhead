@@ -484,7 +484,7 @@ rearm_if_notmax:
 	 * Already set max speed and don't see a need to change that,
 	 * wait until next idle to re-evaluate, don't need timer.
 	 */
-	if (idle_notifier && pcpu->target_freq == pcpu->policy->max)
+	if (pcpu->target_freq == pcpu->policy->max)
 		goto exit;
 
 rearm:
@@ -1115,13 +1115,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 					&thread_migration_nb);
 
 		idle_notifier_register(&cpufreq_interactive_idle_nb);
-
-		if (idle_notifier)
-		{
-			cpufreq_register_notifier(
-				&cpufreq_notifier_block, CPUFREQ_TRANSITION_NOTIFIER);
-		}
-
+		cpufreq_register_notifier(
+			&cpufreq_notifier_block, CPUFREQ_TRANSITION_NOTIFIER);
 		mutex_unlock(&gov_lock);
 		break;
 
