@@ -20,6 +20,6 @@ cp ../boot-ext4-v"$version".img boot.img
 zip -q -r -9 "$zipname"-cm-v"$version".zip *
 mv *.zip ../
 rm *.img
-if [ -e "$zipname"-cm-v"$version".zip ]; then
+if [ -e ../"$zipname"-cm-v"$version".zip ]; then
 	echo "cm zip made"
 fi
