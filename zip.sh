@@ -4,27 +4,22 @@ version=$(cat .version)
 cd zip/
 rm -f ../*.zip
 
-#normal version
-cp ../boot-v"$version".img boot.img
-zip -r -9 "$zipname"-v"$version".zip *
-mv *.zip ../
-rm *.img
-
-#f2fs
-cp ../boot-f2fs-v"$version".img boot.img
-zip -r -9 "$zipname"-f2fs-v"$version".zip *
-mv *.zip ../
-rm *.img
-
-#f2fs-all
-cp ../boot-f2fs-all-v"$version".img boot.img
-zip -r -9 "$zipname"-f2fs-all-v"$version".zip *
-mv *.zip ../
-rm *.img
+for branch in ext4 f2fs f2fs-all; do
+	cp ../boot-"$branch"-v"$version".img boot.img
+	zip -q -r -9 "$zipname"-"$branch"-v"$version".zip *
+	mv *.zip ../
+	rm *.img
+	if [ -e ../"$zipname"-"$branch"-v"$version".zip ]; then
+		echo "$branch zip made"
+	fi
+done
 
 #CM
 cd ../zip_cm
-cp ../boot-v"$version".img boot.img
-zip -r -9 "$zipname"-cm-v"$version".zip *
+cp ../boot-ext4-v"$version".img boot.img
+zip -q -r -9 "$zipname"-cm-v"$version".zip *
 mv *.zip ../
 rm *.img
+if [ -e "$zipname"-cm-v"$version".zip ]; then
+	echo "cm zip made"
+fi
