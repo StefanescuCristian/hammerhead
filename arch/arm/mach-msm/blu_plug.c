@@ -23,7 +23,6 @@
 #include <linux/timer.h>
 #include <linux/lcd_notify.h>
 #include <linux/cpufreq.h>
-#include <mach/cpufreq.h>
 #include <linux/delay.h>
 #include <linux/slab.h>
 
@@ -37,6 +36,7 @@
 #define MAX_CORES_SCREENOFF (1)
 #define MAX_FREQ_SCREENOFF (1190400)
 #define MAX_FREQ_POWERSAVER (1728000)
+#define MAX_FREQ_PLUG (2265600)
 
 static unsigned int up_threshold = UP_THRESHOLD;;
 static unsigned int delay = DELAY;
@@ -48,6 +48,7 @@ static unsigned int down_timer_cnt = DEF_DOWN_TIMER_CNT;
 static unsigned int up_timer_cnt = DEF_UP_TIMER_CNT;
 static unsigned int max_cores_screenoff = MAX_CORES_SCREENOFF;
 static unsigned int max_freq_screenoff = MAX_FREQ_SCREENOFF;
+static unsigned int max_freq_plug = MAX_FREQ_PLUG;
 static unsigned int powersaver_mode = 0;
 
 static struct delayed_work dyn_work;
@@ -176,52 +177,55 @@ static __cpuinit void max_screenoff(bool screenoff)
 {
 	unsigned int cpu;
 	uint32_t freq;
-		
+	
+	struct cpufreq_policy *policy;
+	
 	if (screenoff) {
 		freq = max_freq_screenoff;
 		
-		if (powersaver_mode) {
-			msm_cpufreq_set_freq_limits(0, MSM_CPUFREQ_NO_LIMIT, freq);
-			goto out;
-		}
-			
 		if (max_cores_screenoff > min_online)
-			max_cores_screenoff = min_online;
+		max_cores_screenoff = min_online;
 		
-		cancel_delayed_work(&dyn_work);
-		flush_scheduled_work();
-
+		cancel_delayed_work_sync(&dyn_work);
+		
 		for_each_online_cpu(cpu) {
-			msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, freq);
+			policy = cpufreq_cpu_get(cpu);
+			
+			if (freq > policy->min && freq != policy->max) {
+				max_freq_plug = policy->max;
+				policy->user_policy.max = freq;
+				policy->max = freq;
+			}
+
+			cpufreq_cpu_put(policy);
 			
 			if (cpu && num_online_cpus() > max_cores_screenoff)
 				cpu_down(cpu);
-			}
+		}
 	}
 	else {
-		if (powersaver_mode) {
-			freq = MAX_FREQ_POWERSAVER;
-			msm_cpufreq_set_freq_limits(0, MSM_CPUFREQ_NO_LIMIT, freq);
-			goto out;
-		}
-		
-		freq = cpufreq_quick_get_max(0);
-		
-		up_all(true);
+		freq = max_freq_plug;
+
+		if (!powersaver_mode)
+			up_all(true);
 		
 		for_each_online_cpu(cpu) {
-			msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, freq);
+			policy = cpufreq_cpu_get(cpu);
+			
+			if (freq > policy->min && freq != policy->max) {
+				policy->user_policy.max = freq;
+				policy->max = freq;
+			}
+		
+			cpufreq_cpu_put(policy);
 		}
-
-		queue_delayed_work_on(0, dyn_workq, &dyn_work, delay);
+		
+		if (!powersaver_mode)
+			queue_delayed_work_on(0, dyn_workq, &dyn_work, delay);
 	}
 	
-out:
-	down_timer = 0;
-	up_timer = 0;
-	
 #if DEBUG
-	pr_debug("%s: num_online_cpus: %u, freq_online_cpus: %u\n", __func__, num_online_cpus(), freq);
+	pr_debug("%s: num_online_cpus: %u, freq_online_cpus: %u\n", __func__, num_online_cpus(), cpufreq_quick_get_max(0));
 #endif
 }
 
@@ -235,33 +239,50 @@ static __cpuinit void powersaver_fn(bool mode)
 {
 	unsigned int cpu;
 	uint32_t freq_save;
+	
+	struct cpufreq_policy *policy;
 		
 	if (mode) {	
 		freq_save = MAX_FREQ_POWERSAVER;
 		
-		cancel_delayed_work(&dyn_work);
-		flush_scheduled_work();
+		cancel_delayed_work_sync(&dyn_work);
 
 		for_each_online_cpu(cpu) {
-			msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, freq_save);
+			policy = cpufreq_cpu_get(cpu);
+			
+			if (freq_save > policy->min && freq_save != policy->max) {
+				max_freq_plug = policy->max;
+				policy->user_policy.max = freq_save;
+				policy->max = freq_save;
+			}
+
+			cpufreq_cpu_put(policy);
+			
 			if (cpu)
 				cpu_down(cpu);
 		}
 	}
 	else {
-		freq_save = cpufreq_quick_get_max(0);
-		
+		freq_save = max_freq_plug;
+
 		up_all(true);
 		
 		for_each_online_cpu(cpu) {
-			msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, freq_save);
+			policy = cpufreq_cpu_get(cpu);
+			
+			if (freq_save> policy->min && freq_save != policy->max) {
+				policy->user_policy.max = freq_save;
+				policy->max = freq_save;
+			}
+		
+			cpufreq_cpu_put(policy);
 		}
-
+		
 		queue_delayed_work_on(0, dyn_workq, &dyn_work, delay);
 	}
 	
 #if DEBUG
-	pr_debug("%s: num_online_cpus: %u, freq_online_cpus: %u\n", __func__, num_online_cpus(), freq_save);
+	pr_debug("%s: num_online_cpus: %u, freq_online_cpus: %u\n", __func__, num_online_cpus(), cpufreq_quick_get_max(0));
 #endif
 }
 
@@ -533,8 +554,7 @@ static int __init dyn_hp_init(void)
 
 static void __exit dyn_hp_exit(void)
 {
-	cancel_delayed_work(&dyn_work);
-	flush_scheduled_work();
+	cancel_delayed_work_sync(&dyn_work);
 	destroy_workqueue(dyn_workq);
 	
 	pr_info("%s: deactivated\n", __func__);
