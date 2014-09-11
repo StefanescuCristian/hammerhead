@@ -500,7 +500,6 @@ void clear_inode(struct inode *inode)
 	BUG_ON(!list_empty(&inode->i_data.private_list));
 	BUG_ON(!(inode->i_state & I_FREEING));
 	BUG_ON(inode->i_state & I_CLEAR);
-	inode_sync_wait(inode);
 	/* don't need i_lock here, no concurrent mods to i_state */
 	inode->i_state = I_FREEING | I_CLEAR;
 }
@@ -530,6 +529,14 @@ static void evict(struct inode *inode)
 		inode_wb_list_del(inode);
 
 	inode_sb_list_del(inode);
+
+	/*
+	 * Wait for flusher thread to be done with the inode so that filesystem
+	 * does not start destroying it while writeback is still running. Since
+	 * the inode has I_FREEING set, flusher thread won't start new work on
+	 * the inode.  We just have to wait for running writeback to finish.
+	 */
+	inode_wait_for_writeback(inode);
 
 	if (op->evict_inode) {
 		op->evict_inode(inode);
@@ -1732,11 +1739,9 @@ EXPORT_SYMBOL(inode_init_owner);
  */
 bool inode_owner_or_capable(const struct inode *inode)
 {
-	struct user_namespace *ns = inode_userns(inode);
-
-	if (current_user_ns() == ns && current_fsuid() == inode->i_uid)
+	if (current_fsuid() == inode->i_uid)
 		return true;
-	if (ns_capable(ns, CAP_FOWNER))
+	if (inode_capable(inode, CAP_FOWNER))
 		return true;
 	return false;
 }
