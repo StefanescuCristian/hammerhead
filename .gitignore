@@ -93,5 +93,5 @@ zip/
 *.zip
 !zip_cm
 push.sh
-private_push.sh
+private_push
 test_push.sh
