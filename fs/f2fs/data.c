@@ -12,6 +12,7 @@
 #include <linux/f2fs_fs.h>
 #include <linux/buffer_head.h>
 #include <linux/mpage.h>
+#include <linux/aio.h>
 #include <linux/writeback.h>
 #include <linux/backing-dev.h>
 #include <linux/blkdev.h>
@@ -25,47 +26,41 @@
 
 static void f2fs_read_end_io(struct bio *bio, int err)
 {
-	const int uptodate = test_bit(BIO_UPTODATE, &bio->bi_flags);
-	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
+	struct bio_vec *bvec;
+	int i;
 
-	do {
+	__bio_for_each_segment(bvec, bio, i, 0) {
 		struct page *page = bvec->bv_page;
 
-		if (--bvec >= bio->bi_io_vec)
-			prefetchw(&bvec->bv_page->flags);
-
-		if (unlikely(!uptodate)) {
+		if (!err) {
+			SetPageUptodate(page);
+		} else {
 			ClearPageUptodate(page);
 			SetPageError(page);
-		} else {
-			SetPageUptodate(page);
 		}
 		unlock_page(page);
-	} while (bvec >= bio->bi_io_vec);
-
+	}
 	bio_put(bio);
 }
 
 static void f2fs_write_end_io(struct bio *bio, int err)
 {
-	const int uptodate = test_bit(BIO_UPTODATE, &bio->bi_flags);
-	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
 	struct f2fs_sb_info *sbi = bio->bi_private;
+	struct bio_vec *bvec;
+	int i;
 
-	do {
+	__bio_for_each_segment(bvec, bio, i, 0) {
 		struct page *page = bvec->bv_page;
 
-		if (--bvec >= bio->bi_io_vec)
-			prefetchw(&bvec->bv_page->flags);
-
-		if (unlikely(!uptodate)) {
+		if (unlikely(err)) {
 			SetPageError(page);
 			set_bit(AS_EIO, &page->mapping->flags);
-			f2fs_stop_checkpoint(sbi);
+			set_ckpt_flags(sbi->ckpt, CP_ERROR_FLAG);
+			sbi->sb->s_flags |= MS_RDONLY;
 		}
 		end_page_writeback(page);
 		dec_page_count(sbi, F2FS_WRITEBACK);
-	} while (bvec >= bio->bi_io_vec);
+	}
 
 	if (sbi->wait_io) {
 		complete(sbi->wait_io);
@@ -145,7 +140,10 @@ void f2fs_submit_merged_bio(struct f2fs_sb_info *sbi,
 	/* change META to META_FLUSH in the checkpoint procedure */
 	if (type >= META_FLUSH) {
 		io->fio.type = META_FLUSH;
-		io->fio.rw = WRITE_FLUSH_FUA | REQ_META | REQ_PRIO;
+		if (test_opt(sbi, NOBARRIER))
+			io->fio.rw = WRITE_FLUSH | REQ_META | REQ_PRIO;
+		else
+			io->fio.rw = WRITE_FLUSH_FUA | REQ_META | REQ_PRIO;
 	}
 	__submit_merged_bio(io);
 	up_write(&io->io_rwsem);
@@ -632,8 +630,10 @@ static int __get_data_block(struct inode *inode, sector_t iblock,
 	if (check_extent_cache(inode, pgofs, bh_result))
 		goto out;
 
-	if (create)
+	if (create) {
+		f2fs_balance_fs(sbi);
 		f2fs_lock_op(sbi);
+	}
 
 	/* When reading holes, we need its node page */
 	set_new_dnode(&dn, inode, NULL, NULL, 0);
@@ -658,8 +658,7 @@ static int __get_data_block(struct inode *inode, sector_t iblock,
 		goto put_out;
 	}
 
-	end_offset = IS_INODE(dn.node_page) ?
-			ADDRS_PER_INODE(F2FS_I(inode)) : ADDRS_PER_BLOCK;
+	end_offset = ADDRS_PER_PAGE(dn.node_page, F2FS_I(inode));
 	bh_result->b_size = (((size_t)1) << blkbits);
 	dn.ofs_in_node++;
 	pgofs++;
@@ -681,8 +680,7 @@ get_next:
 		if (dn.data_blkaddr == NEW_ADDR && !fiemap)
 			goto put_out;
 
-		end_offset = IS_INODE(dn.node_page) ?
-			ADDRS_PER_INODE(F2FS_I(inode)) : ADDRS_PER_BLOCK;
+		end_offset = ADDRS_PER_PAGE(dn.node_page, F2FS_I(inode));
 	}
 
 	if (maxblocks > (bh_result->b_size >> blkbits)) {
@@ -792,9 +790,11 @@ int do_write_data_page(struct page *page, struct f2fs_io_info *fio)
 			!is_cold_data(page) &&
 			need_inplace_update(inode))) {
 		rewrite_data_page(page, old_blkaddr, fio);
+		set_inode_flag(F2FS_I(inode), FI_UPDATE_WRITE);
 	} else {
 		write_data_page(page, &dn, &new_blkaddr, fio);
 		update_extent_cache(new_blkaddr, &dn);
+		set_inode_flag(F2FS_I(inode), FI_APPEND_WRITE);
 	}
 out_writepage:
 	f2fs_put_dnode(&dn);
@@ -922,6 +922,16 @@ skip_write:
 	return 0;
 }
 
+static void f2fs_write_failed(struct address_space *mapping, loff_t to)
+{
+	struct inode *inode = mapping->host;
+
+	if (to > inode->i_size) {
+		truncate_pagecache(inode, 0, inode->i_size);
+		truncate_blocks(inode, inode->i_size);
+	}
+}
+
 static int f2fs_write_begin(struct file *file, struct address_space *mapping,
 		loff_t pos, unsigned len, unsigned flags,
 		struct page **pagep, void **fsdata)
@@ -939,11 +949,13 @@ static int f2fs_write_begin(struct file *file, struct address_space *mapping,
 repeat:
 	err = f2fs_convert_inline_data(inode, pos + len);
 	if (err)
-		return err;
+		goto fail;
 
 	page = grab_cache_page_write_begin(mapping, index, flags);
-	if (!page)
-		return -ENOMEM;
+	if (!page) {
+		err = -ENOMEM;
+		goto fail;
+	}
 
 	/* to avoid latency during memory pressure */
 	unlock_page(page);
@@ -957,10 +969,9 @@ repeat:
 	set_new_dnode(&dn, inode, NULL, NULL, 0);
 	err = f2fs_reserve_block(&dn, index);
 	f2fs_unlock_op(sbi);
-
 	if (err) {
 		f2fs_put_page(page, 0);
-		return err;
+		goto fail;
 	}
 inline_data:
 	lock_page(page);
@@ -990,19 +1001,20 @@ inline_data:
 			err = f2fs_read_inline_data(inode, page);
 			if (err) {
 				page_cache_release(page);
-				return err;
+				goto fail;
 			}
 		} else {
 			err = f2fs_submit_page_bio(sbi, page, dn.data_blkaddr,
 							READ_SYNC);
 			if (err)
-				return err;
+				goto fail;
 		}
 
 		lock_page(page);
 		if (unlikely(!PageUptodate(page))) {
 			f2fs_put_page(page, 1);
-			return -EIO;
+			err = -EIO;
+			goto fail;
 		}
 		if (unlikely(page->mapping != mapping)) {
 			f2fs_put_page(page, 1);
@@ -1013,6 +1025,9 @@ out:
 	SetPageUptodate(page);
 	clear_cold_data(page);
 	return 0;
+fail:
+	f2fs_write_failed(mapping, pos + len);
+	return err;
 }
 
 static int f2fs_write_end(struct file *file,
@@ -1037,7 +1052,11 @@ static int f2fs_write_end(struct file *file,
 }
 
 static int check_direct_IO(struct inode *inode, int rw,
-		const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+#ifdef CONFIG_AIO_OPTIMIZATION
+		struct iov_iter *iter, loff_t offset)
+#else
+  		const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+#endif
 {
 	unsigned blocksize_mask = inode->i_sb->s_blocksize - 1;
 	int i;
@@ -1048,30 +1067,71 @@ static int check_direct_IO(struct inode *inode, int rw,
 	if (offset & blocksize_mask)
 		return -EINVAL;
 
+#ifdef CONFIG_AIO_OPTIMIZATION
+	for (i = 0; i < iter->nr_segs; i++) {
+		const struct iovec *iov = iov_iter_iovec(iter);
+
+		if (iov[i].iov_len & blocksize_mask)
+			return -EINVAL;
+	}
+#else
 	for (i = 0; i < nr_segs; i++)
 		if (iov[i].iov_len & blocksize_mask)
 			return -EINVAL;
+#endif
 	return 0;
 }
 
 static ssize_t f2fs_direct_IO(int rw, struct kiocb *iocb,
-		const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+#ifdef CONFIG_AIO_OPTIMIZATION
+		struct iov_iter *iter, loff_t offset)
+#else
+		const struct iovec *iov, loff_t offset,
+			unsigned long nr_segs)
+
+#endif
 {
 	struct file *file = iocb->ki_filp;
-	struct inode *inode = file->f_mapping->host;
+	struct address_space *mapping = file->f_mapping;
+	struct inode *inode = mapping->host;
+#ifdef CONFIG_AIO_OPTIMIZATION
+	size_t count = iov_iter_count(iter);
+#else
+	size_t count = iov_length(iov, nr_segs);
+#endif
+	int err;
 
 	/* Let buffer I/O handle the inline data case. */
 	if (f2fs_has_inline_data(inode))
 		return 0;
 
-	if (check_direct_IO(inode, rw, iov, offset, nr_segs))
+#ifdef CONFIG_AIO_OPTIMIZATION
+	if (check_direct_IO(inode, rw, iter, offset))
 		return 0;
+#else
+  	if (check_direct_IO(inode, rw, iov, offset, nr_segs))
+  		return 0;
+#endif
 
 	/* clear fsync mark to recover these blocks */
 	fsync_mark_clear(F2FS_SB(inode->i_sb), inode->i_ino);
 
-	return blockdev_direct_IO(rw, iocb, inode, iov, offset, nr_segs,
-							get_data_block);
+#ifdef CONFIG_AIO_OPTIMIZATION
+	err = blockdev_direct_IO(rw, iocb, inode, iter, offset,
+					get_data_block);
+#else
+  	err = blockdev_direct_IO(rw, iocb, inode, iov, offset, nr_segs,
+  							get_data_block);
+#endif
+
+	trace_f2fs_direct_IO_enter(inode, offset, count, rw);
+
+	if (err < 0 && (rw & WRITE))
+		f2fs_write_failed(mapping, offset + count);
+
+	trace_f2fs_direct_IO_exit(inode, offset, count, rw, err);
+
+	return err;
 }
 
 static void f2fs_invalidate_data_page(struct page *page, unsigned long offset)
@@ -1112,7 +1172,7 @@ static sector_t f2fs_bmap(struct address_space *mapping, sector_t block)
 
 	if (f2fs_has_inline_data(inode))
 		return 0;
-	
+
 	return generic_block_bmap(mapping, block, get_data_block);
 }
 
