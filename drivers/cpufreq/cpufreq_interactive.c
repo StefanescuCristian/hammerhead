@@ -162,12 +162,6 @@ static void cpufreq_interactive_timer_resched(unsigned long cpu)
 		add_timer_on(&pcpu->cpu_slack_timer, cpu);
 	}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 8a4bf83... cpufreq: Sync on thread migration optimizations
 	spin_unlock_irqrestore(&pcpu->load_lock, flags);
 }
 
@@ -175,36 +169,12 @@ static void cpufreq_interactive_timer_resched(unsigned long cpu)
  * The cpu_timer and cpu_slack_timer must be deactivated when calling this
  * function.
  */
-<<<<<<< HEAD
 static void cpufreq_interactive_timer_start(int cpu)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu = &per_cpu(cpuinfo, cpu);
 	u64 expires = round_to_nw_start(pcpu->last_evaluated_jiffy);
 	unsigned long flags;
 
-=======
-static void cpufreq_interactive_timer_start(int cpu, int time_override)
-{
-	struct cpufreq_interactive_cpuinfo *pcpu = &per_cpu(cpuinfo, cpu);
-	unsigned long flags;
-	unsigned long expires;
-	if (time_override)
-		expires = jiffies + time_override;
-	else
-		expires = jiffies + usecs_to_jiffies(timer_rate);
-
-	pcpu->cpu_timer.expires = expires;
-	add_timer_on(&pcpu->cpu_timer, cpu);
-	if (timer_slack_val >= 0 && pcpu->target_freq > pcpu->policy->min) {
-		expires += usecs_to_jiffies(timer_slack_val);
-		pcpu->cpu_slack_timer.expires = expires;
-		add_timer_on(&pcpu->cpu_slack_timer, cpu);
-	}
-
->>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
->>>>>>> 8a4bf83... cpufreq: Sync on thread migration optimizations
-=======
->>>>>>> 906d38c... cpufreq: fix merge derp intereactive
 	spin_lock_irqsave(&pcpu->load_lock, flags);
 	pcpu->cpu_timer.expires = expires;
 	add_timer_on(&pcpu->cpu_timer, cpu);
@@ -1113,33 +1083,10 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 				pcpu->floor_validate_time;
 			pcpu->max_freq = policy->max;
 			down_write(&pcpu->enable_sem);
-<<<<<<< HEAD
-<<<<<<< HEAD
 			del_timer_sync(&pcpu->cpu_timer);
 			del_timer_sync(&pcpu->cpu_slack_timer);
 			pcpu->last_evaluated_jiffy = get_jiffies_64();
 			cpufreq_interactive_timer_start(j);
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 906d38c... cpufreq: fix merge derp intereactive
-			expires = jiffies + usecs_to_jiffies(timer_rate);
-			pcpu->cpu_timer.expires = expires;
-			add_timer_on(&pcpu->cpu_timer, j);
-			if (timer_slack_val >= 0) {
-				expires += usecs_to_jiffies(timer_slack_val);
-				pcpu->cpu_slack_timer.expires = expires;
-				add_timer_on(&pcpu->cpu_slack_timer, j);
-			}
-<<<<<<< HEAD
-=======
-			del_timer_sync(&pcpu->cpu_timer);
-			del_timer_sync(&pcpu->cpu_slack_timer);
-			cpufreq_interactive_timer_start(j, 0);
->>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
->>>>>>> 8a4bf83... cpufreq: Sync on thread migration optimizations
-=======
->>>>>>> 906d38c... cpufreq: fix merge derp intereactive
 			pcpu->governor_enabled = 1;
 			up_write(&pcpu->enable_sem);
 		}
@@ -1206,8 +1153,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		else if (policy->min > policy->cur)
 			__cpufreq_driver_target(policy,
 					policy->min, CPUFREQ_RELATION_L);
-<<<<<<< HEAD
-<<<<<<< HEAD
 		for_each_cpu(j, policy->cpus) {
 			pcpu = &per_cpu(cpuinfo, j);
 
@@ -1242,52 +1187,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 			pcpu->max_freq = policy->max;
 		}
-=======
-<<<<<<< HEAD
-=======
-		for_each_cpu(j, policy->cpus) {
-			pcpu = &per_cpu(cpuinfo, j);
-
-			/* hold write semaphore to avoid race */
-			down_write(&pcpu->enable_sem);
-			if (pcpu->governor_enabled == 0) {
-				up_write(&pcpu->enable_sem);
-				continue;
-			}
-
-			/* update target_freq firstly */
-			if (policy->max < pcpu->target_freq)
-				pcpu->target_freq = policy->max;
-			if (policy->min >= pcpu->target_freq) {
-				pcpu->target_freq = policy->min;
-				/* Reschedule timer.
-				 * The governor needs more time to evaluate
-				 * the load after changing policy parameters
-				 */
-				del_timer_sync(&pcpu->cpu_timer);
-				del_timer_sync(&pcpu->cpu_slack_timer);
-				cpufreq_interactive_timer_start(j, 0);
-			} else {
-				/* Reschedule timer.
-				 * Delete the timers, else the timer callback
-				 * may return without re-arm the timer when
-				 * failed to acquire the semaphore. This race
-				 * may cause timer stopped unexpectedly.
-				 */
-				del_timer_sync(&pcpu->cpu_timer);
-				del_timer_sync(&pcpu->cpu_slack_timer);
-				if (pcpu->cpu_timer.expires - jiffies > 1)
-					cpufreq_interactive_timer_start(j, 0);
-				else
-					cpufreq_interactive_timer_start(j, 1);
-			}
-			pcpu->minfreq_boosted = true;
-			up_write(&pcpu->enable_sem);
-		}
->>>>>>> 4e79d2e... cpufreq: Sync on thread migration optimizations
->>>>>>> 8a4bf83... cpufreq: Sync on thread migration optimizations
-=======
->>>>>>> 906d38c... cpufreq: fix merge derp intereactive
 		break;
 	}
 	return 0;
