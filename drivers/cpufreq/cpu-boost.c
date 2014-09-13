@@ -19,12 +19,16 @@
 #include <linux/cpufreq.h>
 #include <linux/cpu.h>
 #include <linux/sched.h>
+#include <linux/sched/rt.h>
 #include <linux/jiffies.h>
 #include <linux/smpboot.h>
 #include <linux/moduleparam.h>
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/time.h>
+#ifdef CONFIG_LCD_NOTIFY
+#include <linux/lcd_notify.h>
+#endif
 
 struct cpu_sync {
 	struct delayed_work boost_rem;
@@ -44,6 +48,10 @@ static struct workqueue_struct *cpu_boost_wq;
 
 static struct work_struct input_boost_work;
 
+#ifdef CONFIG_LCD_NOTIFY
+static struct notifier_block notif;
+#endif
+
 static unsigned int boost_ms;
 module_param(boost_ms, uint, 0644);
 
@@ -56,14 +64,19 @@ module_param(input_boost_freq, uint, 0644);
 static unsigned int input_boost_ms = 40;
 module_param(input_boost_ms, uint, 0644);
 
-static unsigned int migration_load_threshold = 40;
+static unsigned int migration_load_threshold = 30;
 module_param(migration_load_threshold, uint, 0644);
 
-static bool load_based_syncs;
+static bool load_based_syncs = 1;
 module_param(load_based_syncs, bool, 0644);
 
-static bool hotplug_boost;
+static bool hotplug_boost = 1;
 module_param(hotplug_boost, bool, 0644);
+
+#ifdef CONFIG_LCD_NOTIFY
+bool wakeup_boost;
+module_param(wakeup_boost, bool, 0644);
+#endif
 
 static u64 last_input_time;
 #define MIN_INPUT_INTERVAL (150 * USEC_PER_MSEC)
@@ -73,7 +86,8 @@ static u64 last_input_time;
  * make sure policy min >= boost_min. The cpufreq framework then does the job
  * of enforcing the new policy.
  */
-static int boost_adjust_notify(struct notifier_block *nb, unsigned long val, void *data)
+static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
+				void *data)
 {
 	struct cpufreq_policy *policy = data;
 	unsigned int cpu = policy->cpu;
@@ -84,7 +98,7 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val, voi
 
 	if (val != CPUFREQ_ADJUST)
 		return NOTIFY_OK;
-
+	
 	if (!b_min && !ib_min)
 		return NOTIFY_OK;
 
@@ -122,7 +136,7 @@ static void do_input_boost_rem(struct work_struct *work)
 	struct cpu_sync *s = container_of(work, struct cpu_sync,
 						input_boost_rem.work);
 
-	pr_debug("Removing input boost for CPU%d\n", s->cpu);
+	pr_debug("Removing input/hotplug boost for CPU%d\n", s->cpu);
 	s->input_boost_min = 0;
 	/* Force policy re-evaluation to trigger adjust notifier. */
 	cpufreq_update_policy(s->cpu);
@@ -131,7 +145,6 @@ static void do_input_boost_rem(struct work_struct *work)
 static int boost_migration_should_run(unsigned int cpu)
 {
 	struct cpu_sync *s = &per_cpu(sync_info, cpu);
-
 	return s->pending;
 }
 
@@ -159,12 +172,12 @@ static void run_boost_migration(unsigned int cpu)
 		return;
 
 	req_freq = load_based_syncs ?
-			(dest_policy.cpuinfo.max_freq * s->task_load) / 100 :
-								src_policy.cur;
+		(dest_policy.max * s->task_load) / 100 :
+						src_policy.cur;
 
 	if (req_freq <= dest_policy.cpuinfo.min_freq) {
-	    pr_debug("No sync. Sync Freq:%u\n", req_freq);
-	    return;
+			pr_debug("No sync. Sync Freq:%u\n", req_freq);
+		return;
 	}
 
 	if (sync_threshold)
@@ -275,14 +288,8 @@ static void do_input_boost(struct work_struct *work)
 		ret = cpufreq_get_policy(&policy, i);
 		if (ret)
 			continue;
-		if (policy.cur >= input_boost_freq){
-			if (!delayed_work_pending(&i_sync_info->input_boost_rem)
-			     && i_sync_info->input_boost_min != 0){
-				i_sync_info->input_boost_min = 0;
-				cpufreq_update_policy(i);
-			}
+		if (policy.cur >= input_boost_freq)
 			continue;
-		}
 
 		cancel_delayed_work_sync(&i_sync_info->input_boost_rem);
 		i_sync_info->input_boost_min = input_boost_freq;
@@ -298,22 +305,16 @@ static void cpuboost_input_event(struct input_handle *handle,
 		unsigned int type, unsigned int code, int value)
 {
 	u64 now;
-	int ret;
-	struct cpufreq_policy policy;
 
 	if (!input_boost_freq || work_pending(&input_boost_work))
-		return;
-
-	ret = cpufreq_get_policy(&policy, 0);
-	if (!ret && input_boost_freq <= policy.cpuinfo.min_freq)
 		return;
 
 	now = ktime_to_us(ktime_get());
 	if (now - last_input_time < MIN_INPUT_INTERVAL)
 		return;
 
+	pr_debug("Input boost for input event.\n");
 	queue_work(cpu_boost_wq, &input_boost_work);
-
 	last_input_time = ktime_to_us(ktime_get());
 }
 
@@ -394,9 +395,6 @@ static struct input_handler cpuboost_input_handler = {
 static int cpuboost_cpu_callback(struct notifier_block *cpu_nb,
 				 unsigned long action, void *hcpu)
 {
-	int ret;
-	struct cpufreq_policy policy;
-
 	switch (action & ~CPU_TASKS_FROZEN) {
 	case CPU_UP_PREPARE:
 	case CPU_DEAD:
@@ -404,11 +402,9 @@ static int cpuboost_cpu_callback(struct notifier_block *cpu_nb,
 		break;
 	case CPU_ONLINE:
 		if (!hotplug_boost || !input_boost_freq ||
-		    work_pending(&input_boost_work))
+		     work_pending(&input_boost_work))
 			break;
-		ret = cpufreq_get_policy(&policy, 0);
-		if (!ret && input_boost_freq <= policy.cpuinfo.min_freq)
-			break;
+		pr_debug("Hotplug boost for CPU%d\n", (int)hcpu);
 		queue_work(cpu_boost_wq, &input_boost_work);
 		last_input_time = ktime_to_us(ktime_get());
 		break;
@@ -421,6 +417,31 @@ static int cpuboost_cpu_callback(struct notifier_block *cpu_nb,
 static struct notifier_block __refdata cpu_nblk = {
         .notifier_call = cpuboost_cpu_callback,
 };
+
+#ifdef CONFIG_LCD_NOTIFY
+static int lcd_notifier_callback(struct notifier_block *this,
+				unsigned long event, void *data)
+{
+	switch (event) {
+	case LCD_EVENT_ON_START:
+	case LCD_EVENT_OFF_END:
+	case LCD_EVENT_OFF_START:
+		break;
+	case LCD_EVENT_ON_END:
+		if (!wakeup_boost || !input_boost_freq ||
+		     work_pending(&input_boost_work))
+			break;
+		pr_debug("Wakeup boost for LCD on event.\n");
+		queue_work(cpu_boost_wq, &input_boost_work);
+		last_input_time = ktime_to_us(ktime_get());
+		break;
+	default:
+		break;
+	}
+
+	return NOTIFY_OK;
+}
+#endif
 
 static int cpu_boost_init(void)
 {
@@ -455,6 +476,13 @@ static int cpu_boost_init(void)
 	ret = register_hotcpu_notifier(&cpu_nblk);
 	if (ret)
 		pr_err("Cannot register cpuboost hotplug handler.\n");
+
+#ifdef CONFIG_LCD_NOTIFY
+	notif.notifier_call = lcd_notifier_callback;
+	ret = lcd_register_client(&notif);
+        if (ret != 0)
+                pr_err("Failed to register hotplug LCD notifier callback.\n");
+#endif
 
 	return ret;
 }
