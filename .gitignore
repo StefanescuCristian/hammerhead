@@ -92,6 +92,6 @@ flash.sh
 zip/
 *.zip
 !zip_cm
-push.sh
+push*.sh
 private_push
 test_push.sh
