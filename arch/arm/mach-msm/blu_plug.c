@@ -25,11 +25,12 @@
 #include <linux/cpufreq.h>
 #include <linux/delay.h>
 #include <linux/slab.h>
+#include <linux/input.h>
 
 #define INIT_DELAY		(20 * HZ) /* Initial delay to 20 sec */
 #define DELAY			(HZ / 2)
 #define UP_THRESHOLD		(70)
-#define MIN_ONLINE		(2)
+#define MIN_ONLINE		(1)
 #define MAX_ONLINE		(4)
 #define DEF_DOWN_TIMER_CNT	(10)	/* 5 secs */
 #define DEF_UP_TIMER_CNT	(2)	/* 1 sec */
@@ -50,6 +51,7 @@ static unsigned int max_cores_screenoff = MAX_CORES_SCREENOFF;
 static unsigned int max_freq_screenoff = MAX_FREQ_SCREENOFF;
 static unsigned int max_freq_plug = MAX_FREQ_PLUG;
 static unsigned int powersaver_mode = 0;
+static unsigned int rcrc;
 
 static struct delayed_work dyn_work;
 static struct workqueue_struct *dyn_workq;
@@ -138,7 +140,7 @@ out:
  * If the average load is below up_threshold offline one more CPU if the
  * down_timer has expired.
  */
-static __cpuinit void load_timer(struct work_struct *work)
+static __ref void load_timer(struct work_struct *work)
 {
 	unsigned int cpu;
 	unsigned int avg_load = 0;
@@ -173,7 +175,7 @@ static __cpuinit void load_timer(struct work_struct *work)
  * Restores previous values on resume work
  *
  */
-static __cpuinit void max_screenoff(bool screenoff)
+static __ref void max_screenoff(bool screenoff)
 {
 	unsigned int cpu;
 	uint32_t freq;
@@ -235,7 +237,7 @@ static __cpuinit void max_screenoff(bool screenoff)
  * Restores previous values on resume work
  *
  */
-static __cpuinit void powersaver_fn(bool mode)
+static __ref void powersaver_fn(bool mode)
 {
 	unsigned int cpu;
 	uint32_t freq_save;
@@ -287,18 +289,18 @@ static __cpuinit void powersaver_fn(bool mode)
 }
 
 /* On suspend put offline all cores except cpu0*/
-static __cpuinit void dyn_lcd_suspend(struct work_struct *work)
+static __ref void dyn_lcd_suspend(struct work_struct *work)
 {	
 	max_screenoff(true);
 }
 
 /* On resume bring online CPUs until max_online to prevent lags */
-static __cpuinit void dyn_lcd_resume(struct work_struct *work)
+static __ref void dyn_lcd_resume(struct work_struct *work)
 {
 	max_screenoff(false);
 }
 
-static __cpuinit int lcd_notifier_callback(struct notifier_block *this, unsigned long event, void *data)
+static __ref int lcd_notifier_callback(struct notifier_block *this, unsigned long event, void *data)
 {
 	switch (event) {
 	case LCD_EVENT_ON_END:
@@ -316,6 +318,81 @@ static __cpuinit int lcd_notifier_callback(struct notifier_block *this, unsigned
 
 	return NOTIFY_OK;
 }
+
+static __ref void blu_plug_input_event(struct input_handle *handle,
+		unsigned int type,
+		unsigned int code, int value)
+{
+	if (type == EV_SYN && code == SYN_REPORT) {
+		if (num_online_cpus() < 2 && !powersaver_mode) {
+			down_timer = 0;
+			up_one();
+		}
+	}
+}
+
+static int blu_plug_input_connect(struct input_handler *handler,
+		struct input_dev *dev, const struct input_device_id *id)
+{
+	struct input_handle *handle;
+	int error;
+
+	handle = kzalloc(sizeof(struct input_handle), GFP_KERNEL);
+	if (!handle)
+		return -ENOMEM;
+
+	handle->dev = dev;
+	handle->handler = handler;
+	handle->name = "blu_plug";
+
+	error = input_register_handle(handle);
+	if (error)
+		goto err2;
+
+	error = input_open_device(handle);
+	if (error)
+		goto err1;
+
+	return 0;
+err1:
+	input_unregister_handle(handle);
+err2:
+	kfree(handle);
+	return error;
+}
+
+static void blu_plug_input_disconnect(struct input_handle *handle)
+{
+	input_close_device(handle);
+	input_unregister_handle(handle);
+	kfree(handle);
+}
+
+static const struct input_device_id blu_plug_ids[] = {
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			 INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
+			    BIT_MASK(ABS_MT_POSITION_X) |
+			    BIT_MASK(ABS_MT_POSITION_Y) },
+	}, /* multi-touch touchscreen */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
+			 INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
+		.absbit = { [BIT_WORD(ABS_X)] =
+			    BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
+	}, /* touchpad */
+};
+
+static struct input_handler blu_plug_input_handler = {
+	.event		= blu_plug_input_event,
+	.connect	= blu_plug_input_connect,
+	.disconnect	= blu_plug_input_disconnect,
+	.name		= "blu_plug",
+	.id_table	= blu_plug_ids,
+};
 
 /******************** Module parameters *********************/
 
@@ -344,7 +421,7 @@ static struct kernel_param_ops up_threshold_ops = {
 module_param_cb(up_threshold, &up_threshold_ops, &up_threshold, 0644);
 
 /* min_online */
-static __cpuinit int set_min_online(const char *val, const struct kernel_param *kp)
+static __ref int set_min_online(const char *val, const struct kernel_param *kp)
 {
 	int ret = 0;
 	unsigned int i;
@@ -372,7 +449,7 @@ static struct kernel_param_ops min_online_ops = {
 module_param_cb(min_online, &min_online_ops, &min_online, 0644);
 
 /* max_online */
-static __cpuinit int set_max_online(const char *val, const struct kernel_param *kp)
+static __ref int set_max_online(const char *val, const struct kernel_param *kp)
 {
 	int ret = 0;
 	unsigned int i;
@@ -401,7 +478,7 @@ static struct kernel_param_ops max_online_ops = {
 module_param_cb(max_online, &max_online_ops, &max_online, 0644);
 
 /* max_cores_screenoff */
-static __cpuinit int set_max_cores_screenoff(const char *val, const struct kernel_param *kp)
+static __ref int set_max_cores_screenoff(const char *val, const struct kernel_param *kp)
 {
 	int ret = 0;
 	unsigned int i;
@@ -432,7 +509,7 @@ static struct kernel_param_ops max_cores_screenoff_ops = {
 module_param_cb(max_cores_screenoff, &max_cores_screenoff_ops, &max_cores_screenoff, 0644);
 
 /* max_freq_screenoff */
-static __cpuinit int set_max_freq_screenoff(const char *val, const struct kernel_param *kp)
+static __ref int set_max_freq_screenoff(const char *val, const struct kernel_param *kp)
 {
 	int ret = MAX_FREQ_SCREENOFF;
 	unsigned int i;
@@ -456,7 +533,7 @@ static struct kernel_param_ops max_freq_screenoff_ops = {
 module_param_cb(max_freq_screenoff, &max_freq_screenoff_ops, &max_freq_screenoff, 0644);
 
 /* powersave_mode enable*/
-static __cpuinit int set_powersaver_mode(const char *val, const struct kernel_param *kp)
+static __ref int set_powersaver_mode(const char *val, const struct kernel_param *kp)
 {
 	int ret = 0;
 
@@ -538,6 +615,10 @@ static int __init dyn_hp_init(void)
 	if (lcd_register_client(&notify) != 0)
 		pr_info("%s: lcd client register error\n", __func__);
 	
+	rcrc = input_register_handler(&blu_plug_input_handler);
+	if (rcrc)
+		pr_info("%s: failed to register input handler\n",__func__);
+	
 	dyn_workq = alloc_workqueue("dyn_hotplug_workqueue", WQ_HIGHPRI | WQ_FREEZABLE, 1);
 	if (!dyn_workq)
 		return -ENOMEM;
@@ -554,6 +635,7 @@ static int __init dyn_hp_init(void)
 
 static void __exit dyn_hp_exit(void)
 {
+	input_unregister_handler(&blu_plug_input_handler);
 	cancel_delayed_work_sync(&dyn_work);
 	destroy_workqueue(dyn_workq);
 	
