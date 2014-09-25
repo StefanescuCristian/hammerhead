@@ -133,7 +133,7 @@ static unsigned int up_threshold_any_cpu_freq;
 /*
  * Making sure cpufreq stays low when it needs to stay low
  */
-#define DOWN_LOW_LOAD_THRESHOLD 10
+#define DOWN_LOW_LOAD_THRESHOLD 5
 
 /* Round to starting jiffy of next evaluation window */
 static u64 round_to_nw_start(u64 jif)
@@ -260,6 +260,14 @@ static unsigned int freq_to_above_hispeed_delay(unsigned int freq)
 	return ret;
 }
 
+static unsigned int calc_freq(struct cpufreq_interactive_cpuinfo *pcpu,
+	unsigned int load)
+{
+	unsigned int max = pcpu->policy->max;
+	unsigned int min = pcpu->policy->min;
+	return min + load * (max - min) / 100;
+}
+
 static u64 update_load(int cpu)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu = &per_cpu(cpuinfo, cpu);
@@ -333,7 +341,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 		if (pcpu->target_freq < boosted_freq) {
 			new_freq = boosted_freq;
 		} else {
-			new_freq = pcpu->policy->max * cpu_load / 100;
+			new_freq = calc_freq(pcpu, cpu_load);
 
 			if (new_freq < boosted_freq)
 				new_freq = boosted_freq;
@@ -341,7 +349,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 	} else if (cpu_load <= DOWN_LOW_LOAD_THRESHOLD) {
 		new_freq = pcpu->policy->cpuinfo.min_freq;
 	} else {
-		new_freq = pcpu->policy->max * cpu_load / 100;
+		new_freq = calc_freq(pcpu, cpu_load);
 
 		if (sync_freq && new_freq < sync_freq) {
 
@@ -376,7 +384,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 	pcpu->hispeed_validate_time = now;
 
 	if (cpufreq_frequency_table_target(pcpu->policy, pcpu->freq_table,
-					   new_freq, CPUFREQ_RELATION_H,
+					   new_freq, CPUFREQ_RELATION_L,
 					   &index)) {
 		spin_unlock_irqrestore(&pcpu->target_freq_lock, flags);
 		goto rearm;
