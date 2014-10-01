@@ -15,6 +15,7 @@
 #define MDSS_DSI_H
 
 #include <linux/list.h>
+#include <linux/gpio.h>
 #include <mach/scm-io.h>
 
 #include "mdss_panel.h"
@@ -88,6 +89,7 @@ enum dsi_panel_bl_ctrl {
 enum dsi_panel_status_mode {
 	ESD_BTA,
 	ESD_REG,
+	ESD_TE,
 	ESD_MAX,
 };
 
@@ -277,6 +279,7 @@ struct mdss_dsi_ctrl_pdata {
 	u8 ctrl_state;
 	int panel_mode;
 	int irq_cnt;
+	int disp_te_gpio;
 	int rst_gpio;
 	int disp_en_gpio;
 	int mode_gpio;
@@ -288,6 +291,8 @@ struct mdss_dsi_ctrl_pdata {
 	int new_fps;
 	int pwm_enabled;
 	bool dmap_iommu_map;
+	atomic_t te_irq_ready;
+
 	struct pwm_device *pwm_bl;
 	struct dsi_drv_cm_data shared_pdata;
 	u32 pclk_rate;
@@ -360,6 +365,7 @@ void mdss_dsi_controller_cfg(int enable,
 void mdss_dsi_sw_reset(struct mdss_dsi_ctrl_pdata *ctrl, bool restore);
 
 irqreturn_t mdss_dsi_isr(int irq, void *ptr);
+irqreturn_t hw_vsync_handler(int irq, void *data);
 void mdss_dsi_irq_handler_config(struct mdss_dsi_ctrl_pdata *ctrl_pdata);
 
 void mdss_dsi_set_tx_power_mode(int mode, struct mdss_panel_data *pdata);
@@ -461,6 +467,12 @@ static inline struct mdss_dsi_ctrl_pdata *mdss_dsi_get_ctrl_by_index(int ndx)
 		return NULL;
 
 	return ctrl_list[ndx];
+}
+
+static inline bool mdss_dsi_is_te_based_esd(struct mdss_dsi_ctrl_pdata *ctrl)
+{
+	return (ctrl->status_mode == ESD_TE) &&
+		gpio_is_valid(ctrl->disp_te_gpio);
 }
 
 static inline bool mdss_dsi_is_panel_off(struct mdss_panel_data *pdata)
