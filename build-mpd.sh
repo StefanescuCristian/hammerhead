@@ -32,7 +32,7 @@ cd ../hammerhead
 fi
 
 if [ -e "boot-"$branch"-v"$version".img" ]; then
-	./zip.sh
+	./zip-mpd.sh
 	./private_push "boot-"$branch"-v"$version".img"
 fi
 
