@@ -4,7 +4,7 @@ rm *.img
 rm *.zip
 	
 make mrproper
-make big-bum_defconfig
+make big-bum-mpd_defconfig
 
 if [ $# -gt 0 ]; then
 echo $1 > .version
@@ -31,9 +31,9 @@ rm -rf zImage*
 cd ../hammerhead
 fi
 
-if [ -e "boot-ext4-v"$version".img" ]; then
+if [ -e "boot-"$branch"-v"$version".img" ]; then
 	./zip.sh
-	./private_push
+	./private_push "boot-"$branch"-v"$version".img"
 fi
 
 rm arch/arm/boot/zImage*
