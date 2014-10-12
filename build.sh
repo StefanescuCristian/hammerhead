@@ -34,7 +34,7 @@ fi
 
 if [ -e "boot-ext4-v"$version".img" ]; then
 	./zip.sh
-	./private_push
+	../private_apps/private_push
 fi
 
 rm arch/arm/boot/zImage*

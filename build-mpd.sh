@@ -33,7 +33,7 @@ fi
 
 if [ -e "boot-"$branch"-v"$version".img" ]; then
 	./zip-mpd.sh
-	./private_push "boot-"$branch"-v"$version".img"
+	../private_apps/private_push "boot-"$branch"-v"$version".img"
 fi
 
 rm arch/arm/boot/zImage*
