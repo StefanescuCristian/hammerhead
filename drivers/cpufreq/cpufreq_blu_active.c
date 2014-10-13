@@ -457,7 +457,12 @@ static void cpufreq_interactive_timer(unsigned long data)
 		pcpu->floor_validate_time = now;
 	}
 
-	if (pcpu->target_freq == new_freq) {
+	/* In case actual freq set in target(policy->cur) is not updated
+	 * till next timer interrupt arrives, new_freq remains same as
+	 * actual freq. Don't go for setting same frequency again.
+	 */
+	if (pcpu->target_freq == new_freq
+		&& pcpu->policy->cur == new_freq) {
 		spin_unlock_irqrestore(&pcpu->target_freq_lock, flags);
 		goto rearm_if_notmax;
 	}
