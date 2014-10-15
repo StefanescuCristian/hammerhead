@@ -10,6 +10,7 @@ if [ $# -gt 0 ]; then
 echo $1 > .version
 fi
 J=$(echo $(($(grep processor /proc/cpuinfo | wc -l) + 1)))
+STARTTIME=$(date +%s)
 make -j"$J"
 
 if [ -e arch/arm/boot/zImage-dtb ]; then
@@ -30,6 +31,7 @@ rm -rf zImage*
 
 cd ../hammerhead
 fi
+ENDTIME=$(date +%s)
 
 if [ -e "boot-"$branch"-v"$version".img" ]; then
 	./zip-mpd.sh
@@ -37,3 +39,4 @@ if [ -e "boot-"$branch"-v"$version".img" ]; then
 fi
 
 rm arch/arm/boot/zImage*
+echo "It took $(($ENDTIME - $STARTTIME)) seconds to build"
