@@ -3046,7 +3046,6 @@ static int dwc3_msm_pm_resume(struct device *dev)
 
 	dev_dbg(dev, "dwc3-msm PM resume\n");
 
-	atomic_set(&mdwc->pm_suspended, 0);
 	if (mdwc->resume_pending) {
 		mdwc->resume_pending = false;
 
@@ -3066,6 +3065,8 @@ static int dwc3_msm_pm_resume(struct device *dev)
 							DWC3_EVENT_XCEIV_STATE);
 		}
 	}
+
+	atomic_set(&mdwc->pm_suspended, 0);
 
 	return ret;
 }
