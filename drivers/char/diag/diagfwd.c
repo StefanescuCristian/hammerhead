@@ -342,12 +342,31 @@ int diag_process_smd_read_data(struct diag_smd_info *smd_info, void *buf,
 		return 0;
 	}
 
-	if (smd_info->buf_in_1 == buf) {
-		write_ptr_modem = smd_info->write_ptr_1;
-		in_busy_ptr = &smd_info->in_busy_1;
-	} else if (smd_info->buf_in_2 == buf) {
-		write_ptr_modem = smd_info->write_ptr_2;
-		in_busy_ptr = &smd_info->in_busy_2;
+	/* If the data is already hdlc encoded */
+	if (!smd_info->encode_hdlc) {
+		if (smd_info->buf_in_1 == buf) {
+			write_ptr_modem = smd_info->write_ptr_1;
+			in_busy_ptr = &smd_info->in_busy_1;
+		} else if (smd_info->buf_in_2 == buf) {
+			write_ptr_modem = smd_info->write_ptr_2;
+			in_busy_ptr = &smd_info->in_busy_2;
+		} else {
+			pr_err("diag: In %s, no match for in_busy_1, peripheral: %d\n",
+				__func__, smd_info->peripheral);
+		}
+
+		if (write_ptr_modem) {
+			spin_lock_irqsave(&smd_info->in_busy_lock, flags);
+			write_ptr_modem->length = total_recd;
+			*in_busy_ptr = 1;
+			err = diag_device_write(buf, smd_info->peripheral,
+						write_ptr_modem);
+			spin_unlock_irqrestore(&smd_info->in_busy_lock, flags);
+			if (err) {
+				pr_err_ratelimited("diag: In %s, diag_device_write error: %d\n",
+					__func__, err);
+			}
+		}
 	} else {
 		pr_err("diag: In %s, no match for in_busy_1\n", __func__);
 	}
