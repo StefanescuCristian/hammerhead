@@ -105,7 +105,7 @@ static unsigned int *above_hispeed_delay = default_above_hispeed_delay;
 static int nabove_hispeed_delay = ARRAY_SIZE(default_above_hispeed_delay);
 
 /* 1000000us - 1s */
-#define DEFAULT_BOOSTPULSE_DURATION 250000
+#define DEFAULT_BOOSTPULSE_DURATION 0
 static int boostpulse_duration_val = DEFAULT_BOOSTPULSE_DURATION;
 #define DEFAULT_INPUT_BOOST_FREQ 1190400
 int input_boost_freq = DEFAULT_INPUT_BOOST_FREQ;
@@ -113,7 +113,7 @@ int input_boost_freq = DEFAULT_INPUT_BOOST_FREQ;
 /*
  * Making sure cpufreq stays low when it needs to stay low
  */
-#define DOWN_LOW_LOAD_THRESHOLD 5
+#define DOWN_LOW_LOAD_THRESHOLD 10
 
 /*
  * Default thread migration boost cpufreq
