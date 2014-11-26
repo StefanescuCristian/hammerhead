@@ -88,11 +88,8 @@ GTAGS
 \#*#
 arch/arm/mach-msm/smd_rpc_sym.c
 boot*.img
-build.sh
 flash.sh
-zip/
 *.zip
-!zip_cm
 push*.sh
 private_push
 test_push.sh
