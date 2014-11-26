@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm *.img
+rm *.img *.zip
 
 make mrproper
 make franco_defconfig
