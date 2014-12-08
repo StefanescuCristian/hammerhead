@@ -46,7 +46,7 @@ static struct workqueue_struct *msm_cpufreq_wq;
 
 /* maxscroff */
 uint32_t maxscroff_freq = 729600;
-uint32_t maxscroff = 0; 
+uint32_t maxscroff = 1; 
 
 /* ex max freq */
 uint32_t ex_max_freq;
