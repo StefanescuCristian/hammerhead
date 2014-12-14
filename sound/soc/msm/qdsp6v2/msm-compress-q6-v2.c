@@ -450,15 +450,11 @@ static void populate_codec_list(struct msm_compr_audio *prtd)
 			COMPR_PLAYBACK_MIN_NUM_FRAGMENTS;
 	prtd->compr_cap.max_fragments =
 			COMPR_PLAYBACK_MAX_NUM_FRAGMENTS;
-	prtd->compr_cap.num_codecs = 8;
+	prtd->compr_cap.num_codecs = 4;
 	prtd->compr_cap.codecs[0] = SND_AUDIOCODEC_MP3;
 	prtd->compr_cap.codecs[1] = SND_AUDIOCODEC_AAC;
 	prtd->compr_cap.codecs[2] = SND_AUDIOCODEC_AC3;
 	prtd->compr_cap.codecs[3] = SND_AUDIOCODEC_EAC3;
-	prtd->compr_cap.codecs[4] = SND_AUDIOCODEC_MP2;
-	prtd->compr_cap.codecs[5] = SND_AUDIOCODEC_PCM;
-	prtd->compr_cap.codecs[6] = SND_AUDIOCODEC_WMA;
-	prtd->compr_cap.codecs[7] = SND_AUDIOCODEC_WMA_PRO;
 }
 
 static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
@@ -470,22 +466,8 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 	struct asm_wma_cfg wma_cfg;
 	struct asm_wmapro_cfg wma_pro_cfg;
 	int ret = 0;
-	uint16_t bit_width = 16;
 
 	switch (prtd->codec) {
-	case FORMAT_LINEAR_PCM:
-		pr_debug("SND_AUDIOCODEC_PCM\n");
-		if (prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE)
-			bit_width = 24;
-		ret = q6asm_media_format_block_pcm_format_support_v2(
-							prtd->audio_client,
-							prtd->sample_rate,
-							prtd->num_channels,
-							bit_width, stream_id);
-		if (ret < 0)
-			pr_err("%s: CMD Format block failed\n", __func__);
-
-		break;
 	case FORMAT_MP3:
 		pr_debug("SND_AUDIOCODEC_MP3\n");
 		/* no media format block needed */
@@ -866,12 +848,6 @@ static int msm_compr_set_params(struct snd_compr_stream *cstream,
 	pr_debug("%s: sample_rate %d\n", __func__, prtd->sample_rate);
 
 	switch (params->codec.id) {
-	case SND_AUDIOCODEC_PCM: {
-		pr_debug("SND_AUDIOCODEC_PCM\n");
-		prtd->codec = FORMAT_LINEAR_PCM;
-		break;
-	}
-
 	case SND_AUDIOCODEC_MP3: {
 		pr_debug("SND_AUDIOCODEC_MP3\n");
 		prtd->codec = FORMAT_MP3;
