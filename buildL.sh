@@ -27,3 +27,4 @@ cd ../hammerhead
 
 rm arch/arm/boot/zImage*
 
+./zip.sh
