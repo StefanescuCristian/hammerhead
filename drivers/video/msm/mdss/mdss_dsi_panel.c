@@ -24,14 +24,6 @@
 
 #include <asm/system_info.h>
 
-#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-#include <linux/input/doubletap2wake.h>
-#endif
-
-#ifdef CONFIG_PWRKEY_SUSPEND
-#include <linux/qpnp/power-on.h>
-#endif
-
 #include "mdss_dsi.h"
 
 #define DT_CMD_HDR 6
@@ -183,17 +175,6 @@ static void mdss_dsi_panel_bklt_dcs(struct mdss_dsi_ctrl_pdata *ctrl, int level)
 void mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
-	
-	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-	bool prevent_sleep = (dt2w_switch > 0);
-	if (prevent_sleep && in_phone_call)
-		prevent_sleep = false;
-	#endif
-	
-	#ifdef CONFIG_PWRKEY_SUSPEND
-	if (pwrkey_pressed)
-		prevent_sleep = false;
-	#endif
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -251,24 +232,14 @@ void mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			mdss_panel_id == PANEL_LGE_JDI_ORISE_CMD ||
 			mdss_panel_id == PANEL_LGE_JDI_NOVATEK_VIDEO ||
 			mdss_panel_id == PANEL_LGE_JDI_NOVATEK_CMD) {
-			#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-			if (!prevent_sleep)
-			#endif
-			{
-				if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
-					gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
-				usleep(20 * 1000);
-				gpio_set_value((ctrl_pdata->rst_gpio), 0);
-			}
+			if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
+				gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
+			usleep(20 * 1000);
+			gpio_set_value((ctrl_pdata->rst_gpio), 0);
 		} else {
-			#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-			if (!prevent_sleep)
-			#endif
-			{
-				gpio_set_value((ctrl_pdata->rst_gpio), 0);
-				if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
-					gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
-			}
+			gpio_set_value((ctrl_pdata->rst_gpio), 0);
+			if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
+				gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
 		}
 	}
 }
@@ -327,7 +298,7 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	if (local_pdata->on_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &local_pdata->on_cmds);
 	mutex_unlock(&panel_cmd_mutex);
-	
+
 	pr_info("%s\n", __func__);
 	return 0;
 }
@@ -336,18 +307,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 {
 	struct mipi_panel_info *mipi;
 	struct mdss_dsi_ctrl_pdata *ctrl = NULL;
-	
-	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-	bool prevent_sleep = (dt2w_switch > 0);
-	if (prevent_sleep && in_phone_call)
-		prevent_sleep = false;
-	#endif
 
-	#ifdef CONFIG_PWRKEY_SUSPEND
-	if (pwrkey_pressed)
-		prevent_sleep = false;
-	#endif
-	
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
 		return -EINVAL;
@@ -363,15 +323,6 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	if (!gpio_get_value(ctrl->disp_en_gpio))
 		return 0;
 
-	#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-	if (prevent_sleep) {
-		ctrl->off_cmds.cmds[1].payload[0] = 0x11;
-	} else {
-		ctrl->off_cmds.cmds[1].payload[0] = 0x10;
-	}
-	pr_info("[prevent_touchscreen_sleep]: payload = %x \n", ctrl->off_cmds.cmds[1].payload[0]);
-	#endif
-	
 	mutex_lock(&panel_cmd_mutex);
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds);

@@ -15,10 +15,6 @@
 
 #include <linux/errno.h>
 
-#ifdef CONFIG_PWRKEY_SUSPEND
-extern bool pwrkey_pressed;
-#endif
-
 /**
  * enum pon_trigger_source: List of PON trigger sources
  * %PON_SMPL:		PON triggered by SMPL - Sudden Momentary Power Loss
