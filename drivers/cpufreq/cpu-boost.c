@@ -87,7 +87,7 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 	const char *cp = buf;
 	bool enabled = false;
 
-	while ((cp = strpbrk(cp + 1, " :")))
+	while ((cp = strpbrk(cp + 1, " ")))
 		ntokens++;
 
 	/* single number: apply to all CPUs */
@@ -105,7 +105,7 @@ static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 
 	cp = buf;
 	for (i = 0; i < ntokens; i += 2) {
-		if (sscanf(cp, "%u:%u", &cpu, &val) != 2)
+		if (sscanf(cp, "%u", &val) != 2)
 			return -EINVAL;
 		if (cpu > num_possible_cpus())
 			return -EINVAL;
@@ -135,7 +135,7 @@ static int get_input_boost_freq(char *buf, const struct kernel_param *kp)
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		cnt += snprintf(buf + cnt, PAGE_SIZE - cnt,
-				"%d:%u ", cpu, s->input_boost_freq);
+				"%u ", s->input_boost_freq);
 	}
 	cnt += snprintf(buf + cnt, PAGE_SIZE - cnt, "\n");
 	return cnt;
