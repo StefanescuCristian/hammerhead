@@ -348,6 +348,7 @@ struct mdss_panel_info {
 	u32 min_height;
 
 	u32 cont_splash_enabled;
+	bool esd_rdy;
 	u32 partial_update_enabled;
 	struct ion_handle *splash_ihdl;
 	int panel_power_state;
