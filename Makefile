@@ -244,9 +244,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else echo sh; fi ; fi)
 
 HOSTCC       = ccache gcc
-HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast
-HOSTCXXFLAGS = -Ofast
+HOSTCXX      = ccache g++
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fforce-addr -fgraphite-identity -floop-block -floop-interchange -floop-parallelize-all -floop-strip-mine -fmodulo-sched -fmodulo-sched-allow-regmoves -fsched-spec-load -fsingle-precision-constant -ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 -ftree-vectorize -fno-inline-functions -funroll-loops -fpeel-loops -floop-nest-optimize -funsafe-loop-optimizations -ftree-loop-ivcanon -ftree-loop-im -fivopts -ftracer -floop-flatten -fvect-cost-model=cheap -funit-at-a-time -fprefetch-loop-arrays 
+HOSTCXXFLAGS = ${HOSTCFLAGS}
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
