@@ -2164,7 +2164,7 @@ static int shmem_encode_fh(struct inode *inode, __u32 *fh, int *len,
 {
 	if (*len < 3) {
 		*len = 3;
-		return FILEID_INVALID;
+		return 255;
 	}
 
 	if (inode_unhashed(inode)) {

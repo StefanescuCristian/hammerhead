@@ -1603,10 +1603,10 @@ int reiserfs_encode_fh(struct inode *inode, __u32 * data, int *lenp,
 
 	if (parent && (maxlen < 5)) {
 		*lenp = 5;
-		return FILEID_INVALID;
+		return 255;
 	} else if (maxlen < 3) {
 		*lenp = 3;
-		return FILEID_INVALID;
+		return 255;
 	}
 
 	data[0] = inode->i_ino;
