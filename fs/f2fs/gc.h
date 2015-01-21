@@ -35,10 +35,12 @@ struct f2fs_gc_kthread {
 	unsigned int gc_idle;
 };
 
-struct inode_entry {
-	struct list_head list;
-	struct inode *inode;
+struct gc_inode_list {
+	struct list_head ilist;
+	struct radix_tree_root iroot;
 };
+
+extern struct kmem_cache *inode_entry_slab;
 
 /*
  * inline functions
@@ -91,7 +93,7 @@ static inline bool has_enough_invalid_blocks(struct f2fs_sb_info *sbi)
 	block_t invalid_user_blocks = sbi->user_block_count -
 					written_block_count(sbi);
 	/*
-	 * Background GC is triggered with the following condition.
+	 * Background GC is triggered with the following conditions.
 	 * 1. There are a number of invalid blocks.
 	 * 2. There is not enough free space.
 	 */
