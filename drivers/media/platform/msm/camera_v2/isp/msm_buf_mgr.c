@@ -293,10 +293,6 @@ static int msm_isp_get_buf(struct msm_isp_buf_mgr *buf_mgr, uint32_t id,
 		pr_err("%s: Invalid bufq\n", __func__);
 		return rc;
 	}
-	if (!bufq->bufq_handle) {
-		pr_err("%s: Invalid bufq handle\n", __func__);
-		return rc;
-	}
 
 	*buf_info = NULL;
 	spin_lock_irqsave(&bufq->bufq_lock, flags);
@@ -366,14 +362,11 @@ static int msm_isp_get_buf(struct msm_isp_buf_mgr *buf_mgr, uint32_t id,
 		if (bufq->buf_type == ISP_SHARE_BUF) {
 			temp_buf_info = kzalloc(
 			   sizeof(struct msm_isp_buffer), GFP_ATOMIC);
-			if (temp_buf_info) {
-				temp_buf_info->buf_reuse_flag = 1;
-				temp_buf_info->buf_used[id] = 1;
-				temp_buf_info->buf_get_count = 1;
-				list_add_tail(&temp_buf_info->share_list,
-							  &bufq->share_head);
-			} else
-				rc = -ENOMEM;
+			temp_buf_info->buf_reuse_flag = 1;
+			temp_buf_info->buf_used[id] = 1;
+			temp_buf_info->buf_get_count = 1;
+			list_add_tail(&temp_buf_info->share_list,
+						  &bufq->share_head);
 		}
 	} else {
 		(*buf_info)->state = MSM_ISP_BUFFER_STATE_DEQUEUED;
@@ -594,21 +587,14 @@ static int msm_isp_buf_enqueue(struct msm_isp_buf_mgr *buf_mgr,
 	if (buf_state == MSM_ISP_BUFFER_STATE_DIVERTED) {
 		buf_info = msm_isp_get_buf_ptr(buf_mgr,
 						info->handle, info->buf_idx);
-		if (info->dirty_buf) {
-			rc = msm_isp_put_buf(buf_mgr,
-				info->handle, info->buf_idx);
-		} else {
-			if (BUF_SRC(bufq->stream_id))
-				pr_err("%s: Invalid native buffer state\n",
-					__func__);
-			else
-				rc = msm_isp_buf_done(buf_mgr,
-					info->handle, info->buf_idx,
-					buf_info->tv, buf_info->frame_id);
-		}
+		if (info->dirty_buf)
+			msm_isp_put_buf(buf_mgr, info->handle, info->buf_idx);
+		else
+			msm_isp_buf_done(buf_mgr, info->handle, info->buf_idx,
+				buf_info->tv, buf_info->frame_id);
 	} else {
 		bufq = msm_isp_get_bufq(buf_mgr, info->handle);
-		if (bufq && BUF_SRC(bufq->stream_id)) {
+		if (MSM_ISP_BUFFER_SRC_HAL != BUF_SRC(bufq->stream_id)) {
 			rc = msm_isp_put_buf(buf_mgr,
 					info->handle, info->buf_idx);
 			if (rc < 0) {
@@ -655,7 +641,7 @@ static int msm_isp_request_bufq(struct msm_isp_buf_mgr *buf_mgr,
 	struct msm_isp_bufq *bufq = NULL;
 	CDBG("%s: E\n", __func__);
 
-	if (!buf_request->num_buf || buf_request->num_buf > VIDEO_MAX_FRAME) {
+	if (!buf_request->num_buf) {
 		pr_err("Invalid buffer request\n");
 		return rc;
 	}

@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -679,92 +679,7 @@ static int32_t msm_sensor_init_gpio_pin_tbl(struct device_node *of_node,
 		CDBG("%s qcom,gpio-reset %d\n", __func__,
 			gconf->gpio_num_info->gpio_num[SENSOR_GPIO_STANDBY]);
 	}
-
-	rc = of_property_read_u32(of_node, "qcom,gpio-vio", &val);
-	if (!rc) {
-		if (val >= gpio_array_size) {
-			pr_err("%s:%d qcom,gpio-vio invalid %d\n",
-				__func__, __LINE__, val);
-			goto ERROR;
-		}
-		gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VIO] =
-			gpio_array[val];
-		CDBG("%s qcom,gpio-vio %d\n", __func__,
-			gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VIO]);
-	} else if (rc != -EINVAL) {
-		pr_err("%s:%d read qcom,gpio-vio failed rc %d\n",
-			__func__, __LINE__, rc);
-		goto ERROR;
-	}
-
-	rc = of_property_read_u32(of_node, "qcom,gpio-vana", &val);
-	if (!rc) {
-		if (val >= gpio_array_size) {
-			pr_err("%s:%d qcom,gpio-vana invalid %d\n",
-				__func__, __LINE__, val);
-			goto ERROR;
-		}
-		gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VANA] =
-			gpio_array[val];
-		CDBG("%s qcom,gpio-vana %d\n", __func__,
-			gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VANA]);
-	} else if (rc != -EINVAL) {
-		pr_err("%s:%d read qcom,gpio-vana failed rc %d\n",
-			__func__, __LINE__, rc);
-		goto ERROR;
-	}
-
-	rc = of_property_read_u32(of_node, "qcom,gpio-vdig", &val);
-	if (!rc) {
-		if (val >= gpio_array_size) {
-			pr_err("%s:%d qcom,gpio-vdig invalid %d\n",
-				__func__, __LINE__, val);
-			goto ERROR;
-		}
-		gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VDIG] =
-			gpio_array[val];
-		CDBG("%s qcom,gpio-vdig %d\n", __func__,
-			gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VDIG]);
-	} else if (rc != -EINVAL) {
-		pr_err("%s:%d read qcom,gpio-vdig failed rc %d\n",
-			__func__, __LINE__, rc);
-		goto ERROR;
-	}
-
-	rc = of_property_read_u32(of_node, "qcom,gpio-vaf", &val);
-	if (!rc) {
-		if (val >= gpio_array_size) {
-			pr_err("%s:%d qcom,gpio-vaf invalid %d\n",
-				__func__, __LINE__, val);
-			goto ERROR;
-		}
-		gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VAF] =
-			gpio_array[val];
-		CDBG("%s qcom,gpio-vaf %d\n", __func__,
-			gconf->gpio_num_info->gpio_num[SENSOR_GPIO_VAF]);
-	} else if (rc != -EINVAL) {
-		pr_err("%s:%d read qcom,gpio-vaf failed rc %d\n",
-			__func__, __LINE__, rc);
-		goto ERROR;
-	}
-
-	rc = of_property_read_u32(of_node, "qcom,gpio-af-pwdm", &val);
-	if (!rc) {
-		if (val >= gpio_array_size) {
-			pr_err("%s:%d qcom,gpio-af-pwdm invalid %d\n",
-				__func__, __LINE__, val);
-			goto ERROR;
-		}
-		gconf->gpio_num_info->gpio_num[SENSOR_GPIO_AF_PWDM] =
-			gpio_array[val];
-		CDBG("%s qcom,gpio-af-pwdm %d\n", __func__,
-			gconf->gpio_num_info->gpio_num[SENSOR_GPIO_AF_PWDM]);
-	} else if (rc != -EINVAL) {
-		pr_err("%s:%d read qcom,gpio-af-pwdm failed rc %d\n",
-			__func__, __LINE__, rc);
-		goto ERROR;
-	}
-	return 0;
+	return rc;
 
 ERROR:
 	kfree(gconf->gpio_num_info);
@@ -1080,7 +995,6 @@ int32_t msm_sensor_power_up(struct msm_sensor_ctrl_t *s_ctrl)
 	struct msm_sensor_power_setting_array *power_setting_array = NULL;
 	struct msm_sensor_power_setting *power_setting = NULL;
 	struct msm_camera_sensor_board_info *data = s_ctrl->sensordata;
-	uint32_t retry = 0;
 	s_ctrl->stop_setting_valid = 0;
 
 	CDBG("%s:%d\n", __func__, __LINE__);
@@ -1182,22 +1096,13 @@ int32_t msm_sensor_power_up(struct msm_sensor_ctrl_t *s_ctrl)
 		}
 	}
 
-	for (retry = 0; retry < 3; retry++)
-	{
-		if (s_ctrl->func_tbl->sensor_match_id)
-			rc = s_ctrl->func_tbl->sensor_match_id(s_ctrl);
-		else
-			rc = msm_sensor_match_id(s_ctrl);
-		if (rc < 0) {
-			if (retry < 2) {
-				continue;
-			} else {
-				pr_err("%s:%d match id failed rc %d\n", __func__, __LINE__, rc);
-				goto power_up_failed;
-			}
-		} else {
-			break;
-		}
+	if (s_ctrl->func_tbl->sensor_match_id)
+		rc = s_ctrl->func_tbl->sensor_match_id(s_ctrl);
+	else
+		rc = msm_sensor_match_id(s_ctrl);
+	if (rc < 0) {
+		pr_err("%s:%d match id failed rc %d\n", __func__, __LINE__, rc);
+		goto power_up_failed;
 	}
 
 	CDBG("%s exit\n", __func__);
@@ -1371,15 +1276,6 @@ static void msm_sensor_stop_stream(struct msm_sensor_ctrl_t *s_ctrl)
 	return;
 }
 
-static int msm_sensor_get_af_status(struct msm_sensor_ctrl_t *s_ctrl,
-			void __user *argp)
-{
-	/* TO-DO: Need to set AF status register address and expected value
-	We need to check the AF status in the sensor register and
-	set the status in the *status variable accordingly*/
-	return 0;
-}
-
 static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 			unsigned int cmd, void *arg)
 {
@@ -1392,8 +1288,6 @@ static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 	switch (cmd) {
 	case VIDIOC_MSM_SENSOR_CFG:
 		return s_ctrl->func_tbl->sensor_config(s_ctrl, argp);
-	case VIDIOC_MSM_SENSOR_GET_AF_STATUS:
-		return msm_sensor_get_af_status(s_ctrl, argp);
 	case VIDIOC_MSM_SENSOR_RELEASE:
 		msm_sensor_stop_stream(s_ctrl);
 		return 0;
@@ -2065,8 +1959,6 @@ int32_t msm_sensor_platform_probe(struct platform_device *pdev, void *data)
 		(struct msm_sensor_ctrl_t *)data;
 	struct msm_camera_cci_client *cci_client = NULL;
 	uint32_t session_id;
-	unsigned long mount_pos;
-
 	s_ctrl->pdev = pdev;
 	s_ctrl->dev = &pdev->dev;
 	CDBG("%s called data %p\n", __func__, data);
@@ -2141,11 +2033,6 @@ int32_t msm_sensor_platform_probe(struct platform_device *pdev, void *data)
 	s_ctrl->msm_sd.sd.entity.name =
 		s_ctrl->msm_sd.sd.name;
 
-	mount_pos = s_ctrl->sensordata->sensor_init_params->position << 16;
-	mount_pos = mount_pos | ((s_ctrl->sensordata->sensor_init_params->
-					sensor_mount_angle / 90) << 8);
-	s_ctrl->msm_sd.sd.entity.flags = mount_pos | MEDIA_ENT_FL_DEFAULT;
-
 	rc = camera_init_v4l2(&s_ctrl->pdev->dev, &session_id);
 	CDBG("%s rc %d session_id %d\n", __func__, rc, session_id);
 	s_ctrl->sensordata->sensor_info->session_id = session_id;
@@ -2163,8 +2050,6 @@ int32_t msm_sensor_i2c_probe(struct i2c_client *client,
 {
 	int rc = 0;
 	uint32_t session_id;
-	unsigned long mount_pos;
-
 	CDBG("%s %s_i2c_probe called\n", __func__, client->name);
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		pr_err("%s %s i2c_check_functionality failed\n",
@@ -2260,11 +2145,6 @@ int32_t msm_sensor_i2c_probe(struct i2c_client *client,
 	s_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_SENSOR;
 	s_ctrl->msm_sd.sd.entity.name =
 		s_ctrl->msm_sd.sd.name;
-
-	mount_pos = s_ctrl->sensordata->sensor_init_params->position << 16;
-	mount_pos = mount_pos | ((s_ctrl->sensordata->sensor_init_params->
-					sensor_mount_angle / 90) << 8);
-	s_ctrl->msm_sd.sd.entity.flags = mount_pos | MEDIA_ENT_FL_DEFAULT;
 
 	rc = camera_init_v4l2(&s_ctrl->sensor_i2c_client->client->dev,
 		&session_id);
