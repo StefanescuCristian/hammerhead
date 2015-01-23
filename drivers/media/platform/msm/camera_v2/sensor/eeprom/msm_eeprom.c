@@ -226,7 +226,7 @@ static int msm_eeprom_alloc_memory_map(struct msm_eeprom_ctrl_t *e_ctrl,
 				       struct device_node *of)
 {
 	int i, rc = 0;
-	char property[12];
+	char property[14];
 	uint32_t count = 6;
 	struct msm_eeprom_board_info *eb = e_ctrl->eboard_info;
 
@@ -454,14 +454,16 @@ static int msm_eeprom_get_dt_data(struct msm_eeprom_ctrl_t *e_ctrl)
 	uint16_t *gpio_array = NULL;
 
 	eb_info = e_ctrl->eboard_info;
-	rc = msm_camera_get_dt_power_setting_data(spi->dev.of_node,
-		  &power_info->power_setting, &power_info->power_setting_size);
-	if (rc)
-		return rc;
 
 	rc = msm_camera_get_dt_vreg_data(of_node, &power_info->cam_vreg,
 					     &power_info->num_vreg);
-	if (rc)
+	if (rc < 0)
+		return rc;
+
+	rc = msm_camera_get_dt_power_setting_data(of_node,
+		power_info->cam_vreg, power_info->num_vreg,
+		&power_info->power_setting, &power_info->power_setting_size);
+	if (rc < 0)
 		goto ERROR1;
 
 	power_info->gpio_conf = kzalloc(sizeof(struct msm_camera_gpio_conf),
