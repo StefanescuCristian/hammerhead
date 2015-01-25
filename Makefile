@@ -330,7 +330,9 @@ include $(srctree)/scripts/Kbuild.include
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
+LD		+= $(GRAPHITE_KERNEL_FLAGS)
 CC		= $(CROSS_COMPILE)gcc
+CC		+= $(GRAPHITE_KERNEL_FLAGS)
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
