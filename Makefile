@@ -252,8 +252,8 @@ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast \
 -ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 \
 -ftree-vectorize -fno-inline-functions -funroll-loops -fpeel-loops \
 -floop-nest-optimize -funsafe-loop-optimizations -ftree-loop-ivcanon \
--ftree-loop-im -fivopts -ftracer -floop-flatten -fvect-cost-model=cheap \
--funit-at-a-time -fprefetch-loop-arrays -ffast-math
+-ftree-loop-im -fivopts -ftracer -floop-flatten -fvect-cost-model=dynamic \
+-ffast-math -ftree-loop-if-convert
 HOSTCXXFLAGS = ${HOSTCFLAGS}
 
 # Decide whether to build built-in, modular, or both.
@@ -366,7 +366,7 @@ KERNELFLAGS	= -Ofast -DNDEBUG -fforce-addr -fgraphite-identity -floop-block \
 -ftree-vectorize -fno-inline-functions -funroll-loops -fpeel-loops \
 -floop-nest-optimize -funsafe-loop-optimizations -ftree-loop-ivcanon \
 -ftree-loop-im -fivopts -fsection-anchors -ftracer -floop-flatten \
--fvect-cost-model=cheap -funit-at-a-time -fprefetch-loop-arrays -ffast-math \
+-fvect-cost-model=dynamic -ftree-loop-if-convert -ffast-math \
 -marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access \
 -mvectorize-with-neon-quad -pipe
 CC		+= $(KERNELFLAGS)
