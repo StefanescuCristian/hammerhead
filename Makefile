@@ -245,15 +245,17 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = ccache gcc
 HOSTCXX      = ccache g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast \
--fforce-addr -fgraphite-identity -floop-block -floop-interchange \
--floop-parallelize-all -floop-strip-mine -fmodulo-sched \
--fmodulo-sched-allow-regmoves -fsched-spec-load -fsingle-precision-constant \
--ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 \
--ftree-vectorize -fno-inline-functions -funroll-loops -fpeel-loops \
--floop-nest-optimize -funsafe-loop-optimizations -ftree-loop-ivcanon \
--ftree-loop-im -fivopts -ftracer -floop-flatten -fvect-cost-model=dynamic \
--ffast-math -ftree-loop-if-convert
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
+-Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
+-fgraphite -fgraphite-identity -fivopts -floop-block -floop-flatten \
+-floop-interchange -floop-nest-optimize -floop-parallelize-all \
+-floop-strip-mine -fpredictive-commoning -fmodulo-sched \
+-fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
+-fsched-spec-load -fsingle-precision-constant -ftracer \
+-ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
+-ftree-parallelize-loops=4 -ftree-vectorize -funroll-loops \
+-funsafe-loop-optimizations -fvect-cost-model=dynamic \
+-pipe
 HOSTCXXFLAGS = ${HOSTCFLAGS}
 
 # Decide whether to build built-in, modular, or both.
@@ -359,15 +361,16 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS	= -Ofast -DNDEBUG -fforce-addr -fgraphite-identity -floop-block \
--floop-interchange -floop-parallelize-all -floop-strip-mine -fmodulo-sched \
--fmodulo-sched-allow-regmoves -fsched-spec-load -fsingle-precision-constant \
--ftree-loop-distribution -ftree-loop-linear -ftree-parallelize-loops=4 \
--ftree-vectorize -fno-inline-functions -funroll-loops -fpeel-loops \
--floop-nest-optimize -funsafe-loop-optimizations -ftree-loop-ivcanon \
--ftree-loop-im -fivopts -fsection-anchors -ftracer -floop-flatten \
--fvect-cost-model=dynamic -ftree-loop-if-convert -ffast-math \
--marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access \
+KERNELFLAGS	= -Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
+-fgraphite -fgraphite-identity -fivopts -floop-block -floop-flatten \
+-floop-interchange -floop-nest-optimize -floop-parallelize-all \
+-floop-strip-mine -fpredictive-commoning -fmodulo-sched \
+-fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
+-fsched-spec-load -fsection-anchors -fsingle-precision-constant -ftracer \
+-ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
+-ftree-parallelize-loops=4 -ftree-vectorize -funroll-loops \
+-funsafe-loop-optimizations -fvect-cost-model=dynamic -marm -mcpu=cortex-a15 \
+-mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access \
 -mvectorize-with-neon-quad -pipe
 CC		+= $(KERNELFLAGS)
 CPP		+= $(KERNELFLAGS)
