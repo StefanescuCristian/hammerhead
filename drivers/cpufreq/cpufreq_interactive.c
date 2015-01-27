@@ -133,7 +133,18 @@ static bool align_windows = true;
 static unsigned int max_freq_hysteresis;
 
 static bool io_is_busy;
+/*
+ * Introduce a new way to choose the frequency, but disable by default.
+ * Also, use a low load threshold, so that the cpu stays at the minimum freq
+ * for a longer time.
+ * We set it to 0 though, since staying longer in a low frequency will generate
+ * a higher load and a jump to a high frequency more often.
+ * If a user wants to a threshold, I recommend something between 5-15%.
+ */
 static bool use_cpu_load = false;
+#define LOW_LOAD_THRESHOLD 0;
+static unsigned int load_threshold_val = LOW_LOAD_THRESHOLD;
+
 /* Round to starting jiffy of next evaluation window */
 static u64 round_to_nw_start(u64 jif)
 {
@@ -393,18 +404,21 @@ static void cpufreq_interactive_timer(unsigned long data)
 		if (pcpu->policy->cur < hispeed_freq) {
 			new_freq = hispeed_freq;
 		} else {
-			if (use_cpu_load)
+			if (use_cpu_load) {
 				new_freq = pcpu->policy->max * cpu_load / 100;
-			else
+			} else
 				new_freq = choose_freq(pcpu, loadadjfreq);
 
 			if (new_freq < hispeed_freq)
 				new_freq = hispeed_freq;
 		}
 	} else {
-		if (use_cpu_load)
-			new_freq = pcpu->policy->max * cpu_load / 100;
-		else
+		if (use_cpu_load) {
+			if (cpu_load <= load_threshold_val)
+				new_freq = pcpu->policy->min;
+			else
+				new_freq = pcpu->policy->max * cpu_load / 100;
+		} else
 			new_freq = choose_freq(pcpu, loadadjfreq);
 	}
 
@@ -1138,6 +1152,29 @@ static ssize_t store_use_cpu_load(struct kobject *kobj,
 static struct global_attr use_cpu_load_attr = __ATTR(use_cpu_load, 0644,
 		show_use_cpu_load, store_use_cpu_load);
 
+static ssize_t show_load_threshold(
+	struct kobject *kobj, struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", load_threshold_val);
+}
+
+static ssize_t store_load_threshold(
+	struct kobject *kobj, struct attribute *attr, const char *buf,
+	size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = strict_strtoul(buf, 10, &val);
+	if (ret < 0)
+		return ret;
+
+	load_threshold_val = val;
+	return count;
+}
+
+define_one_global_rw(load_threshold);
+
 static struct attribute *interactive_attributes[] = {
 	&target_loads_attr.attr,
 	&above_hispeed_delay_attr.attr,
@@ -1153,6 +1190,7 @@ static struct attribute *interactive_attributes[] = {
 	&max_freq_hysteresis_attr.attr,
 	&align_windows_attr.attr,
 	&use_cpu_load_attr.attr,
+	&load_threshold.attr,
 	NULL,
 };
 
