@@ -330,7 +330,6 @@ include $(srctree)/scripts/Kbuild.include
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
-LD		+= $(GRAPHITE_KERNEL_FLAGS)
 CC		= $(CROSS_COMPILE)gcc
 ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
 CC		+= -O3
