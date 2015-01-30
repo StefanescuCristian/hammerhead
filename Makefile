@@ -369,9 +369,10 @@ KERNELFLAGS	= -Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
 -fsched-spec-load -fsection-anchors -fsingle-precision-constant -ftracer \
 -ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
 -ftree-parallelize-loops=4 -ftree-vectorize -funroll-loops \
--funsafe-loop-optimizations -fvect-cost-model=dynamic -marm -mcpu=cortex-a15 \
--mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access \
--mvectorize-with-neon-quad -pipe
+-funsafe-loop-optimizations -fvect-cost-model=dynamic -marm -march=armv7-a \
+-mfpu=neon-vfpv4 -mtune=cortex-a8 -munaligned-access \
+-mvectorize-with-neon-quad -pipe \
+--param l1-cache-line-size=64 --param l1-cache-size=32 --param l2-cache-size=2048
 CC		+= $(KERNELFLAGS)
 CPP		+= $(KERNELFLAGS)
 MODFLAGS	= -DMODULE -DNDEBUG $(KERNELFLAGS)
