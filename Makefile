@@ -253,7 +253,7 @@ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
 -fsched-spec-load -fsingle-precision-constant -ftracer \
 -ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
--ftree-parallelize-loops=4 -ftree-vectorize -funroll-loops \
+-ftree-vectorize -funroll-loops \
 -funsafe-loop-optimizations -fvect-cost-model=dynamic \
 -pipe
 HOSTCXXFLAGS = ${HOSTCFLAGS}
@@ -368,7 +368,7 @@ KERNELFLAGS	= -Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
 -fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
 -fsched-spec-load -fsection-anchors -fsingle-precision-constant -ftracer \
 -ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
--ftree-parallelize-loops=4 -ftree-vectorize -funroll-loops \
+-ftree-vectorize -funroll-loops \
 -funsafe-loop-optimizations -fvect-cost-model=dynamic -marm -mcpu=cortex-a15 \
 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access \
 -mvectorize-with-neon-quad -pipe \
