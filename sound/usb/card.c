@@ -575,6 +575,10 @@ static void snd_usb_audio_disconnect(struct usb_device *dev,
 		list_for_each(p, &chip->mixer_list) {
 			snd_usb_mixer_disconnect(p);
 		}
+	}
+
+	chip->num_interfaces--;
+	if (chip->num_interfaces <= 0) {
 		usb_chip[chip->index] = NULL;
 		mutex_unlock(&chip->shutdown_mutex);
 		mutex_unlock(&register_mutex);
