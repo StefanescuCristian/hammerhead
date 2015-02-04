@@ -247,11 +247,13 @@ HOSTCC       = ccache gcc
 HOSTCXX      = ccache g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
--fgraphite -fgraphite-identity -fivopts -floop-block -floop-flatten \
+-fgraphite -fgraphite-identity -fira-loop-pressure -fivopts -floop-block -floop-flatten \
 -floop-interchange -floop-nest-optimize -floop-parallelize-all \
 -floop-strip-mine -fpredictive-commoning -fprefetch-loop-arrays -fmodulo-sched \
 -fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
--fsched-spec-load -fschedule-insns2 -fsingle-precision-constant -ftracer \
+-fsched-spec-load -fschedule-insns2 -fsingle-precision-constant \
+-fselective-scheduling -fselective-scheduling2 -fsel-sched-pipelining \
+-fsel-sched-pipelining-outer-loops -ftracer \
 -ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
 -ftree-vectorize -funroll-loops \
 -funsafe-loop-optimizations \
@@ -362,11 +364,13 @@ CHECK		= sparse
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 KERNELFLAGS	= -Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
--fgraphite -fgraphite-identity -fivopts -floop-block -floop-flatten \
+-fgraphite -fgraphite-identity -fira-loop-pressure -fivopts -floop-block -floop-flatten \
 -floop-interchange -floop-nest-optimize -floop-parallelize-all \
 -floop-strip-mine -fpredictive-commoning -fprefetch-loop-arrays -fmodulo-sched \
 -fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
--fsched-spec-load -fschedule-insns2 -fsection-anchors -fsingle-precision-constant -ftracer \
+-fsched-spec-load -fschedule-insns2 -fsection-anchors -fsingle-precision-constant \
+-fselective-scheduling -fselective-scheduling2 -fsel-sched-pipelining \
+-fsel-sched-pipelining-outer-loops -ftracer \
 -ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
 -ftree-vectorize -funroll-loops \
 -funsafe-loop-optimizations -marm -mcpu=cortex-a15 \
