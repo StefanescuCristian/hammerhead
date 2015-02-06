@@ -129,7 +129,7 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 static bool align_windows = true;
 
 /* Improves frequency selection for more energy */
-static bool powersave_bias;
+static bool powersave_bias = true; 
 
 /*
  * Stay at max freq for at least max_freq_hysteresis before dropping
