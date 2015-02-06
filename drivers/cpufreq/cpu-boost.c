@@ -169,11 +169,6 @@ static int boost_adjust_notify(struct notifier_block *nb, unsigned long val,
 		return NOTIFY_OK;
 
 	min = max(b_min, ib_min);
-	
-	/*
-	* If the user underclocks we don't want to boost
-	* min freq above max
-	*/
 	min = min(min, policy->max);
 
 	pr_debug("CPU%u policy min before boost: %u kHz\n",
