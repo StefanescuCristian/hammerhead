@@ -83,6 +83,12 @@ static unsigned int *target_loads = default_target_loads;
 static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 
 /*
+ * Frequency calculation threshold.  Avoid freq oscillations up to this
+ * threshold and allow for dynamic changes above (default cpuinfo min).
+*/
+static unsigned long freq_calc_thresh;
+
+/*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
 #define DEFAULT_MIN_SAMPLE_TIME (80 * USEC_PER_MSEC)
@@ -415,7 +421,9 @@ static void cpufreq_interactive_timer(unsigned long data)
 			new_freq = this_hispeed_freq;
 		} else {
 			if (use_cpu_load) {
-				new_freq = pcpu->policy->max * cpu_load / 100;
+				new_freq = choose_freq(pcpu, loadadjfreq);
+				if (new_freq > freq_calc_thresh)
+					new_freq = pcpu->policy->max * cpu_load / 100;
 			} else
 				new_freq = choose_freq(pcpu, loadadjfreq);
 
@@ -424,9 +432,10 @@ static void cpufreq_interactive_timer(unsigned long data)
 		}
 	} else {
 		if (use_cpu_load) {
+			new_freq = choose_freq(pcpu, loadadjfreq);
 			if (cpu_load <= load_threshold_val)
 				new_freq = pcpu->policy->min;
-			else
+			else if (new_freq > freq_calc_thresh)
 				new_freq = pcpu->policy->max * cpu_load / 100;
 		} else
 			new_freq = choose_freq(pcpu, loadadjfreq);
@@ -841,6 +850,28 @@ static struct global_attr target_loads_attr =
 	__ATTR(target_loads, S_IRUGO | S_IWUSR,
 		show_target_loads, store_target_loads);
 
+static ssize_t show_freq_calc_thresh(struct kobject *kobj,
+				     struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%lu\n", freq_calc_thresh);
+}
+
+static ssize_t store_freq_calc_thresh(struct kobject *kobj,
+			struct attribute *attr, const char *buf, size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = strict_strtoul(buf, 0, &val);
+	if (ret < 0)
+		return ret;
+	freq_calc_thresh = val;
+	return count;
+}
+
+static struct global_attr freq_calc_thresh_attr = __ATTR(freq_calc_thresh, 0644,
+		show_freq_calc_thresh, store_freq_calc_thresh);
+
 static ssize_t show_above_hispeed_delay(
 	struct kobject *kobj, struct attribute *attr, char *buf)
 {
@@ -1190,6 +1221,7 @@ define_one_global_rw(load_threshold);
 
 static struct attribute *interactive_attributes[] = {
 	&target_loads_attr.attr,
+	&freq_calc_thresh_attr.attr,
 	&above_hispeed_delay_attr.attr,
 	&hispeed_freq_attr.attr,
 	&go_hispeed_load_attr.attr,
@@ -1253,6 +1285,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			cpufreq_frequency_get_table(policy->cpu);
 		if (!hispeed_freq)
 			hispeed_freq = policy->max;
+		freq_calc_thresh = policy->cpuinfo.min_freq;
 
 		for_each_cpu(j, policy->cpus) {
 			pcpu = &per_cpu(cpuinfo, j);
