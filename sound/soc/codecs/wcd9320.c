@@ -2188,7 +2188,7 @@ static int slim_tx_mixer_put(struct snd_kcontrol *kcontrol,
 				if (wcd9xxx_tx_vport_validation(
 						vtable,
 						port_id,
-						taiko_p->dai, NUM_CODEC_DAIS)) {
+						taiko_p->dai)) {
 					dev_dbg(codec->dev, "%s: TX%u is used by other virtual port\n",
 						__func__, port_id + 1);
 					mutex_unlock(&codec->mutex);
@@ -6417,10 +6417,7 @@ static int taiko_post_reset_cb(struct wcd9xxx *wcd9xxx)
 				taiko->mbhc_started = true;
 		}
 	}
-
-	if (taiko->machine_codec_event_cb)
-		taiko->machine_codec_event_cb(codec,
-				      WCD9XXX_CODEC_EVENT_CODEC_UP);
+	taiko->machine_codec_event_cb(codec, WCD9XXX_CODEC_EVENT_CODEC_UP);
 
 	taiko_cleanup_irqs(taiko);
 	ret = taiko_setup_irqs(taiko);
@@ -6895,11 +6892,6 @@ static int taiko_resume(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct taiko_priv *taiko = platform_get_drvdata(pdev);
-
-	if (!taiko) {
-		dev_err(dev, "%s: taiko private data is NULL\n", __func__);
-		return -EINVAL;
-	}
 	dev_dbg(dev, "%s: system resume\n", __func__);
 	/* Notify */
 	wcd9xxx_resmgr_notifier_call(&taiko->resmgr, WCD9XXX_EVENT_POST_RESUME);

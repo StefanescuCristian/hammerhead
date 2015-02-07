@@ -1570,7 +1570,7 @@ int q6asm_open_read(struct audio_client *ac,
 
 	open.preprocopo_id = get_asm_topology();
 	if (open.preprocopo_id == 0)
-		open.preprocopo_id = ASM_STREAM_POSTPROC_TOPO_ID_NONE;
+		open.preprocopo_id = ASM_STREAM_POSTPROC_TOPO_ID_DEFAULT;
 	open.bits_per_sample = bits_per_sample;
 	open.mode_flags = 0x0;
 
@@ -1674,7 +1674,7 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 
 	open.postprocopo_id = get_asm_topology();
 	if (open.postprocopo_id == 0)
-		open.postprocopo_id = ASM_STREAM_POSTPROC_TOPO_ID_NONE;
+		open.postprocopo_id = ASM_STREAM_POSTPROC_TOPO_ID_DEFAULT;
 
 	switch (format) {
 	case FORMAT_LINEAR_PCM:
@@ -1700,9 +1700,6 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		break;
 	case FORMAT_EAC3:
 		open.dec_fmt_id = ASM_MEDIA_FMT_EAC3_DEC;
-		break;
-	case FORMAT_MP2:
-		open.dec_fmt_id = ASM_MEDIA_FMT_MP2;
 		break;
 	default:
 		pr_err("%s: Invalid format[%d]\n", __func__, format);
@@ -1771,7 +1768,7 @@ int q6asm_open_read_write(struct audio_client *ac,
 	/* source endpoint : matrix */
 	open.postprocopo_id = get_asm_topology();
 	if (open.postprocopo_id == 0)
-		open.postprocopo_id = ASM_STREAM_POSTPROC_TOPO_ID_NONE;
+		open.postprocopo_id = ASM_STREAM_POSTPROC_TOPO_ID_DEFAULT;
 
 	switch (wr_format) {
 	case FORMAT_LINEAR_PCM:
@@ -2423,7 +2420,7 @@ fail_cmd:
 
 static int __q6asm_media_format_block_pcm(struct audio_client *ac,
 				uint32_t rate, uint32_t channels,
-				uint16_t bits_per_sample, int stream_id)
+				uint16_t bits_per_sample)
 {
 	struct asm_multi_channel_pcm_fmt_blk_v2 fmt;
 	u8 *channel_mapping;
@@ -2432,19 +2429,7 @@ static int __q6asm_media_format_block_pcm(struct audio_client *ac,
 	pr_debug("%s:session[%d]rate[%d]ch[%d]\n", __func__, ac->session, rate,
 		channels);
 
-	q6asm_stream_add_hdr(ac, &fmt.hdr, sizeof(fmt), TRUE, stream_id);
-	atomic_set(&ac->cmd_state, 1);
-	/*
-	 * Updated the token field with stream/session for compressed playback
-	 * Platform driver must know the the stream with which the command is
-	 * associated
-	 */
-	if (ac->io_mode & COMPRESSED_STREAM_IO)
-		fmt.hdr.token = ((ac->session << 8) & 0xFFFF00) |
-				(stream_id & 0xFF);
-
-	pr_debug("%s: token = 0x%x, stream_id  %d, session 0x%x\n",
-		  __func__, fmt.hdr.token, stream_id, ac->session);
+	q6asm_add_hdr(ac, &fmt.hdr, sizeof(fmt), TRUE);
 
 	fmt.hdr.opcode = ASM_DATA_CMD_MEDIA_FMT_UPDATE_V2;
 	fmt.fmt_blk.fmt_blk_size = sizeof(fmt) - sizeof(fmt.hdr) -
@@ -2481,7 +2466,7 @@ int q6asm_media_format_block_pcm(struct audio_client *ac,
 				uint32_t rate, uint32_t channels)
 {
 	return __q6asm_media_format_block_pcm(ac, rate,
-				channels, 16, ac->stream_id);
+				channels, 16);
 }
 
 int q6asm_media_format_block_pcm_format_support(struct audio_client *ac,
@@ -2489,15 +2474,7 @@ int q6asm_media_format_block_pcm_format_support(struct audio_client *ac,
 				uint16_t bits_per_sample)
 {
 	return __q6asm_media_format_block_pcm(ac, rate,
-				channels, bits_per_sample, ac->stream_id);
-}
-
-int q6asm_media_format_block_pcm_format_support_v2(struct audio_client *ac,
-				uint32_t rate, uint32_t channels,
-				uint16_t bits_per_sample, int stream_id)
-{
-	return __q6asm_media_format_block_pcm(ac, rate,
-				channels, bits_per_sample, stream_id);
+				channels, bits_per_sample);
 }
 
 static int __q6asm_media_format_block_multi_ch_pcm(struct audio_client *ac,

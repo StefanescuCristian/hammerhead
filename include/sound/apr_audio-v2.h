@@ -2481,8 +2481,6 @@ struct asm_softvolume_params {
 
 #define ASM_STREAM_POSTPROC_TOPO_ID_DEFAULT 0x00010BE4
 
-#define ASM_STREAM_POSTPROC_TOPO_ID_NONE 0x00010C68
-
 #define ASM_MEDIA_FMT_EVRCB_FS 0x00010BEF
 
 #define ASM_MEDIA_FMT_EVRCWB_FS 0x00010BF0
@@ -3160,7 +3158,6 @@ struct asm_amrwbplus_fmt_blk_v2 {
 #define ASM_MEDIA_FMT_AC3_DEC                   0x00010BF6
 #define ASM_MEDIA_FMT_EAC3_DEC                   0x00010C3C
 #define ASM_MEDIA_FMT_DTS                    0x00010D88
-#define ASM_MEDIA_FMT_MP2                    0x00010DE9
 
 /* Media format ID for adaptive transform acoustic coding. This
  * ID is used by the #ASM_STREAM_CMD_OPEN_WRITE_COMPRESSED command

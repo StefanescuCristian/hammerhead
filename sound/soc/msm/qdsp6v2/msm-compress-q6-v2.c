@@ -461,17 +461,13 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 	struct snd_compr_runtime *runtime = cstream->runtime;
 	struct msm_compr_audio *prtd = runtime->private_data;
 	struct asm_aac_cfg aac_cfg;
-	struct asm_wma_cfg wma_cfg;
-	struct asm_wmapro_cfg wma_pro_cfg;
 	int ret = 0;
 
 	switch (prtd->codec) {
 	case FORMAT_MP3:
-		pr_debug("SND_AUDIOCODEC_MP3\n");
 		/* no media format block needed */
 		break;
 	case FORMAT_MPEG4_AAC:
-		pr_debug("SND_AUDIOCODEC_AAC\n");
 		memset(&aac_cfg, 0x0, sizeof(struct asm_aac_cfg));
 		aac_cfg.aot = AAC_ENC_MODE_EAAC_P;
 		aac_cfg.format = 0x03;
@@ -1446,17 +1442,11 @@ static int msm_compr_get_caps(struct snd_compr_stream *cstream,
 {
 	struct snd_compr_runtime *runtime = cstream->runtime;
 	struct msm_compr_audio *prtd = runtime->private_data;
-	int ret = 0;
 
 	pr_debug("%s\n", __func__);
-	if ((arg != NULL) && (prtd != NULL)) {
-		memcpy(arg, &prtd->compr_cap, sizeof(struct snd_compr_caps));
-	} else {
-		ret = -EINVAL;
-		pr_err("%s: arg (0x%p), prtd (0x%p)\n", __func__, arg, prtd);
-	}
+	memcpy(arg, &prtd->compr_cap, sizeof(struct snd_compr_caps));
 
-	return ret;
+	return 0;
 }
 
 static int msm_compr_get_codec_caps(struct snd_compr_stream *cstream,

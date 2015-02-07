@@ -43,7 +43,6 @@
 #define FORMAT_MULTI_CHANNEL_LINEAR_PCM 0x0012
 #define FORMAT_AC3          0x0013
 #define FORMAT_EAC3         0x0014
-#define FORMAT_MP2          0x0015
 
 #define ENCDEC_SBCBITRATE   0x0001
 #define ENCDEC_IMMEDIATE_DECODE 0x0002
@@ -312,10 +311,6 @@ int q6asm_media_format_block_pcm(struct audio_client *ac,
 int q6asm_media_format_block_pcm_format_support(struct audio_client *ac,
 			uint32_t rate, uint32_t channels,
 			uint16_t bits_per_sample);
-
-int q6asm_media_format_block_pcm_format_support_v2(struct audio_client *ac,
-				uint32_t rate, uint32_t channels,
-				uint16_t bits_per_sample, int stream_id);
 
 int q6asm_media_format_block_multi_ch_pcm(struct audio_client *ac,
 			uint32_t rate, uint32_t channels,
