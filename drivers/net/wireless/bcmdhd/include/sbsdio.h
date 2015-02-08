@@ -4,7 +4,7 @@
  *
  * SDIO core support 1bit, 4 bit SDIO mode as well as SPI mode.
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -163,7 +163,11 @@
 
 /* direct(mapped) cis space */
 #define SBSDIO_CIS_BASE_COMMON		0x1000		/* MAPPED common CIS address */
+#ifdef BCMSPI
+#define SBSDIO_CIS_SIZE_LIMIT		0x100		/* maximum bytes in one spi CIS */
+#else
 #define SBSDIO_CIS_SIZE_LIMIT		0x200		/* maximum bytes in one CIS */
+#endif /* !BCMSPI */
 #define SBSDIO_OTP_CIS_SIZE_LIMIT       0x078           /* maximum bytes OTP CIS */
 
 #define SBSDIO_CIS_OFT_ADDR_MASK	0x1FFFF		/* cis offset addr is < 17 bits */

@@ -1,7 +1,7 @@
 /*
  * Debug/trace/assert driver definitions for Dongle Host Driver.
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -27,7 +27,11 @@
 #ifndef _dhd_dbg_
 #define _dhd_dbg_
 
+#if !defined(CUSTOMER_HW4)
 #define USE_NET_RATELIMIT		net_ratelimit()
+#else
+#define USE_NET_RATELIMIT		1
+#endif
 
 #if defined(DHD_DEBUG)
 
@@ -49,7 +53,11 @@
 #define DHD_REORDER(args)	do {if (dhd_msg_level & DHD_REORDER_VAL) printf args;} while (0)
 #define DHD_PNO(args)		do {if (dhd_msg_level & DHD_PNO_VAL) printf args;} while (0)
 
+#ifdef CUSTOMER_HW4
+#define DHD_TRACE_HW4	DHD_ERROR
+#else
 #define DHD_TRACE_HW4	DHD_TRACE
+#endif
 
 #define DHD_ERROR_ON()		(dhd_msg_level & DHD_ERROR_VAL)
 #define DHD_TRACE_ON()		(dhd_msg_level & DHD_TRACE_VAL)
@@ -88,7 +96,11 @@
 #define DHD_REORDER(args)
 #define DHD_PNO(args)
 
+#ifdef CUSTOMER_HW4
+#define DHD_TRACE_HW4	DHD_ERROR
+#else
 #define DHD_TRACE_HW4	DHD_TRACE
+#endif
 
 #define DHD_ERROR_ON()		0
 #define DHD_TRACE_ON()		0

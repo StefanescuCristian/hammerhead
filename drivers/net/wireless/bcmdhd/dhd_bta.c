@@ -1,7 +1,7 @@
 /*
  * BT-AMP support routines
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -23,7 +23,9 @@
  *
  * $Id: dhd_bta.c 379512 2013-01-17 22:49:08Z $
  */
+#ifndef WLBTAMP
 #error "WLBTAMP is not defined"
+#endif	/* WLBTAMP */
 
 #include <typedefs.h>
 #include <osl.h>

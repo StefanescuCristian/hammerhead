@@ -1,7 +1,7 @@
 /*
  * Linux cfgp2p driver
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: wl_cfgp2p.c 419821 2013-08-22 21:43:26Z $
+ * $Id: wl_cfgp2p.c 447531 2014-01-09 11:31:40Z $
  *
  */
 #include <typedefs.h>
@@ -41,6 +41,7 @@
 #include <bcmendian.h>
 #include <proto/ethernet.h>
 #include <proto/802.11.h>
+#include <net/rtnetlink.h>
 
 #include <wl_cfg80211.h>
 #include <wl_cfgp2p.h>
@@ -71,6 +72,23 @@ static const struct net_device_ops wl_cfgp2p_if_ops = {
 	.ndo_start_xmit = wl_cfgp2p_start_xmit,
 };
 #endif /* WL_ENABLE_P2P_IF */
+
+#if defined(WL_NEWCFG_PRIVCMD_SUPPORT)
+static int wl_cfgp2p_start_xmit(struct sk_buff *skb, struct net_device *ndev);
+static int wl_cfgp2p_do_ioctl(struct net_device *net, struct ifreq *ifr, int cmd);
+
+static int wl_cfgp2p_if_dummy(struct net_device *net)
+{
+	return 0;
+}
+
+static const struct net_device_ops wl_cfgp2p_if_ops = {
+	.ndo_open       = wl_cfgp2p_if_dummy,
+	.ndo_stop       = wl_cfgp2p_if_dummy,
+	.ndo_do_ioctl   = wl_cfgp2p_do_ioctl,
+	.ndo_start_xmit = wl_cfgp2p_start_xmit,
+};
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 
 bool wl_cfgp2p_is_pub_action(void *frame, u32 frame_len)
 {
@@ -158,10 +176,6 @@ bool wl_cfgp2p_is_gas_action(void *frame, u32 frame_len)
 		return false;
 
 #ifdef WL11U
-	/* XXX Hotspot2.0 STA mode can receive only response
-	*  SoftAP mode cannot run Hotspot2.0 compliant Ap because
-	*  Hotspot2.0 support only Enterprise mode
-	*/
 	if (sd_act_frm->action == P2PSD_ACTION_ID_GAS_IRESP)
 		return wl_cfgp2p_find_gas_subtype(P2PSD_GAS_OUI_SUBTYPE,
 			(u8 *)sd_act_frm->query_data + GAS_RESP_OFFSET,
@@ -186,6 +200,29 @@ bool wl_cfgp2p_is_gas_action(void *frame, u32 frame_len)
 		return false;
 #endif /* WL11U */
 }
+#ifdef CUSTOMER_HW4
+bool wl_cfgp2p_is_p2p_gas_action(void *frame, u32 frame_len)
+{
+
+	wifi_p2psd_gas_pub_act_frame_t *sd_act_frm;
+
+	if (frame == NULL)
+		return false;
+
+	sd_act_frm = (wifi_p2psd_gas_pub_act_frame_t *)frame;
+	if (frame_len < (sizeof(wifi_p2psd_gas_pub_act_frame_t) - 1))
+		return false;
+	if (sd_act_frm->category != P2PSD_ACTION_CATEGORY)
+		return false;
+
+	if (sd_act_frm->action == P2PSD_ACTION_ID_GAS_IREQ)
+		return wl_cfgp2p_find_gas_subtype(P2PSD_GAS_OUI_SUBTYPE,
+			(u8 *)sd_act_frm->query_data,
+			frame_len);
+	else
+		return false;
+}
+#endif /* CUSTOMER_HW4 */
 void wl_cfgp2p_print_actframe(bool tx, void *frame, u32 frame_len, u32 channel)
 {
 	wifi_p2p_pub_act_frame_t *pact_frm;
@@ -580,6 +617,7 @@ wl_cfgp2p_set_p2p_mode(struct wl_priv *wl, u8 mode, u32 channel, u16 listen_ms, 
 		return BCME_NOTFOUND;
 	}
 
+
 	/* Put the WL driver into P2P Listen Mode to respond to P2P probe reqs */
 	discovery_mode.state = mode;
 	discovery_mode.chspec = wl_ch_host_to_driver(channel);
@@ -700,12 +738,6 @@ wl_cfgp2p_enable_discovery(struct wl_priv *wl, struct net_device *dev,
 	s32 ret = BCME_OK;
 	s32 bssidx;
 
-	if (wl_to_prmry_ndev(wl) == dev) {
-		bssidx = wl_to_p2p_bss_bssidx(wl, P2PAPI_BSSCFG_DEVICE);
-	} else if (wl_cfgp2p_find_idx(wl, dev, &bssidx) != BCME_OK) {
-		WL_ERR(("Find p2p index from dev(%p) failed\n", dev));
-		return BCME_ERROR;
-	}
 	if (wl_get_p2p_status(wl, DISCOVERY_ON)) {
 		CFGP2P_INFO((" DISCOVERY is already initialized, we have nothing to do\n"));
 		goto set_ie;
@@ -731,6 +763,13 @@ wl_cfgp2p_enable_discovery(struct wl_priv *wl, struct net_device *dev,
 	}
 set_ie:
 	if (ie_len) {
+		if (wl_to_prmry_ndev(wl) == dev) {
+			bssidx = wl_to_p2p_bss_bssidx(wl, P2PAPI_BSSCFG_DEVICE);
+		} else if (wl_cfgp2p_find_idx(wl, dev, &bssidx) != BCME_OK) {
+			WL_ERR(("Find p2p index from dev(%p) failed\n", dev));
+			return BCME_ERROR;
+		}
+
 		ret = wl_cfgp2p_set_management_ie(wl, dev,
 			bssidx,
 			VNDR_IE_PRBREQ_FLAG, ie, ie_len);
@@ -771,6 +810,11 @@ wl_cfgp2p_disable_discovery(struct wl_priv *wl)
 	/* Do a scan abort to stop the driver's scan engine in case it is still
 	 * waiting out an action frame tx dwell time.
 	 */
+#ifdef NOT_YET
+	if (wl_get_p2p_status(wl, SCANNING)) {
+		p2pwlu_scan_abort(hdl, FALSE);
+	}
+#endif
 	wl_clr_p2p_status(wl, DISCOVERY_ON);
 	ret = wl_cfgp2p_deinit_discovery(wl);
 
@@ -904,6 +948,7 @@ wl_cfgp2p_escan(struct wl_priv *wl, struct net_device *dev, u16 active,
 	eparams->version = htod32(ESCAN_REQ_VERSION);
 	eparams->action =  htod16(action);
 	wl_escan_set_sync_id(eparams->sync_id, wl);
+	wl_escan_set_type(wl, WL_SCANTYPE_P2P);
 	CFGP2P_INFO(("SCAN CHANNELS : "));
 
 	for (i = 0; i < num_chans; i++) {
@@ -944,6 +989,16 @@ wl_cfgp2p_act_frm_search(struct wl_priv *wl, struct net_device *ndev,
 		chan_cnt = AF_PEER_SEARCH_CNT;
 	else
 		chan_cnt = SOCIAL_CHAN_CNT;
+#ifdef CUSTOMER_HW4
+	if (wl->afx_hdl->pending_tx_act_frm && wl->afx_hdl->is_active) {
+		wl_action_frame_t *action_frame;
+		action_frame = &(wl->afx_hdl->pending_tx_act_frm->action_frame);
+		if (wl_cfgp2p_is_p2p_gas_action(action_frame->data, action_frame->len))	{
+			chan_cnt = 1;
+			p2p_scan_purpose = P2P_SCAN_AFX_PEER_REDUCED;
+		}
+	}
+#endif /* CUSTOMER_HW4 */
 	default_chan_list = kzalloc(chan_cnt * sizeof(*default_chan_list), GFP_KERNEL);
 	if (default_chan_list == NULL) {
 		CFGP2P_ERR(("channel list allocation failed \n"));
@@ -964,7 +1019,7 @@ wl_cfgp2p_act_frm_search(struct wl_priv *wl, struct net_device *ndev,
 
 	ret = wl_cfgp2p_escan(wl, ndev, true, chan_cnt,
 		default_chan_list, WL_P2P_DISC_ST_SEARCH,
-		WL_SCAN_ACTION_START, bssidx, tx_dst_addr, p2p_scan_purpose);
+		WL_SCAN_ACTION_START, bssidx, NULL, p2p_scan_purpose);
 	kfree(default_chan_list);
 exit:
 	return ret;
@@ -1127,6 +1182,12 @@ wl_cfgp2p_set_management_ie(struct wl_priv *wl, struct net_device *ndev, s32 bss
 				mgmt_ie_buf = wl->ap_info->beacon_ie;
 				mgmt_ie_len = &wl->ap_info->beacon_ie_len;
 				mgmt_ie_buf_len = sizeof(wl->ap_info->beacon_ie);
+				break;
+			case VNDR_IE_ASSOCRSP_FLAG :
+				/* WPS-AP WSC2.0 assoc res includes wps_ie */
+				mgmt_ie_buf = wl->ap_info->assoc_res_ie;
+				mgmt_ie_len = &wl->ap_info->assoc_res_ie_len;
+				mgmt_ie_buf_len = sizeof(wl->ap_info->assoc_res_ie);
 				break;
 			default:
 				mgmt_ie_buf = NULL;
@@ -1544,6 +1605,7 @@ wl_cfgp2p_listen_complete(struct wl_priv *wl, bcm_struct_cfgdev *cfgdev,
 
 	ndev = cfgdev_to_wlc_ndev(cfgdev, wl);
 
+
 	if (wl_get_p2p_status(wl, LISTEN_EXPIRED) == 0) {
 		wl_set_p2p_status(wl, LISTEN_EXPIRED);
 		if (timer_pending(&wl->p2p->listen_timer)) {
@@ -1632,6 +1694,10 @@ wl_cfgp2p_cancel_listen(struct wl_priv *wl, struct net_device *ndev,
 	/* Irrespective of whether timer is running or not, reset
 	 * the LISTEN state.
 	 */
+#ifdef NOT_YET
+	wl_cfgp2p_set_p2p_mode(wl, WL_P2P_DISC_ST_SCAN, 0, 0,
+		wl_to_p2p_bss_bssidx(wl, P2PAPI_BSSCFG_DEVICE));
+#endif /* NOT_YET */
 	if (timer_pending(&wl->p2p->listen_timer)) {
 		del_timer_sync(&wl->p2p->listen_timer);
 		if (notify)
@@ -1994,8 +2060,13 @@ wl_cfgp2p_supported(struct wl_priv *wl, struct net_device *ndev)
 	ret = wldev_iovar_getint(ndev, "p2p",
 	               &p2p_supported);
 	if (ret < 0) {
-		CFGP2P_ERR(("wl p2p error %d\n", ret));
-		return 0;
+		if (ret == BCME_UNSUPPORTED) {
+			CFGP2P_INFO(("p2p is unsupported\n"));
+			return 0;
+		} else {
+			CFGP2P_ERR(("wl p2p error %d\n", ret));
+			return ret;
+		}
 	}
 	if (p2p_supported == 1) {
 		CFGP2P_INFO(("p2p is supported\n"));
@@ -2027,9 +2098,6 @@ wl_cfgp2p_down(struct wl_priv *wl)
 			if (index != WL_INVALID)
 				wl_cfgp2p_clear_management_ie(wl, index);
 	}
-#if defined(WL_CFG80211_P2P_DEV_IF)
-	wl_cfgp2p_del_p2p_disc_if(wdev);
-#endif /* WL_CFG80211_P2P_DEV_IF */
 	wl_cfgp2p_deinit_priv(wl);
 	return 0;
 }
@@ -2330,13 +2398,15 @@ struct ethtool_ops cfgp2p_ethtool_ops = {
 };
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) */
 
-#if defined(WL_ENABLE_P2P_IF)
+#if defined(WL_ENABLE_P2P_IF) || defined(WL_NEWCFG_PRIVCMD_SUPPORT)
 s32
 wl_cfgp2p_register_ndev(struct wl_priv *wl)
 {
 	int ret = 0;
 	struct net_device* net = NULL;
+#ifndef	WL_NEWCFG_PRIVCMD_SUPPORT
 	struct wireless_dev *wdev = NULL;
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 	uint8 temp_addr[ETHER_ADDR_LEN] = { 0x00, 0x90, 0x4c, 0x33, 0x22, 0x11 };
 
 	if (wl->p2p_net) {
@@ -2350,12 +2420,14 @@ wl_cfgp2p_register_ndev(struct wl_priv *wl)
 		return -ENODEV;
 	}
 
+#ifndef	WL_NEWCFG_PRIVCMD_SUPPORT
 	wdev = kzalloc(sizeof(*wdev), GFP_KERNEL);
 	if (unlikely(!wdev)) {
 		WL_ERR(("Could not allocate wireless device\n"));
 		free_netdev(net);
 		return -ENOMEM;
 	}
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 
 	strncpy(net->name, "p2p%d", sizeof(net->name) - 1);
 	net->name[IFNAMSIZ - 1] = '\0';
@@ -2377,33 +2449,41 @@ wl_cfgp2p_register_ndev(struct wl_priv *wl)
 	/* Register with a dummy MAC addr */
 	memcpy(net->dev_addr, temp_addr, ETHER_ADDR_LEN);
 
+#ifndef	WL_NEWCFG_PRIVCMD_SUPPORT
 	wdev->wiphy = wl->wdev->wiphy;
 
 	wdev->iftype = wl_mode_to_nl80211_iftype(WL_MODE_BSS);
 
 	net->ieee80211_ptr = wdev;
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 	net->ethtool_ops = &cfgp2p_ethtool_ops;
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) */
 
+#ifndef	WL_NEWCFG_PRIVCMD_SUPPORT
 	SET_NETDEV_DEV(net, wiphy_dev(wdev->wiphy));
 
 	/* Associate p2p0 network interface with new wdev */
 	wdev->netdev = net;
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 
 	ret = register_netdev(net);
 	if (ret) {
 		CFGP2P_ERR((" register_netdevice failed (%d)\n", ret));
 		free_netdev(net);
+#ifndef	WL_NEWCFG_PRIVCMD_SUPPORT
 		kfree(wdev);
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 		return -ENODEV;
 	}
 
 	/* store p2p net ptr for further reference. Note that iflist won't have this
 	 * entry as there corresponding firmware interface is a "Hidden" interface.
 	 */
+#ifndef	WL_NEWCFG_PRIVCMD_SUPPORT
 	wl->p2p_wdev = wdev;
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 	wl->p2p_net = net;
 
 	printk("%s: P2P Interface Registered\n", net->name);
@@ -2459,7 +2539,9 @@ static int wl_cfgp2p_do_ioctl(struct net_device *net, struct ifreq *ifr, int cmd
 
 	return ret;
 }
+#endif /* WL_ENABLE_P2P_IF || WL_NEWCFG_PRIVCMD_SUPPORT  */
 
+#if defined(WL_ENABLE_P2P_IF)
 static int wl_cfgp2p_if_open(struct net_device *net)
 {
 	extern struct wl_priv *wlcfg_drv_priv;
@@ -2531,19 +2613,19 @@ wl_cfgp2p_add_p2p_disc_if(void)
 	struct ether_addr primary_mac;
 
 	if (!wl)
-		return NULL;
+		return ERR_PTR(-EINVAL);
 
 	WL_TRACE(("Enter\n"));
 
 	if (wl->p2p_wdev) {
 		CFGP2P_ERR(("p2p_wdev defined already.\n"));
-		return NULL;
+		return ERR_PTR(-ENFILE);
 	}
 
 	wdev = kzalloc(sizeof(*wdev), GFP_KERNEL);
 	if (unlikely(!wdev)) {
 		WL_ERR(("Could not allocate wireless device\n"));
-		return NULL;
+		return ERR_PTR(-ENOMEM);
 	}
 
 	memset(&primary_mac, 0, sizeof(primary_mac));
@@ -2554,6 +2636,11 @@ wl_cfgp2p_add_p2p_disc_if(void)
 	wdev->wiphy = wl->wdev->wiphy;
 	wdev->iftype = NL80211_IFTYPE_P2P_DEVICE;
 	memcpy(wdev->address, &wl->p2p->dev_addr, ETHER_ADDR_LEN);
+
+#if defined(WL_NEWCFG_PRIVCMD_SUPPORT)
+	if (cfg->p2p_net)
+		memcpy(cfg->p2p_net->dev_addr, &cfg->p2p->dev_addr, ETHER_ADDR_LEN);
+#endif /* WL_NEWCFG_PRIVCMD_SUPPORT */
 
 	/* store p2p wdev ptr for further reference. */
 	wl->p2p_wdev = wdev;
@@ -2623,6 +2710,9 @@ wl_cfgp2p_stop_p2p_device(struct wiphy *wiphy, struct wireless_dev *wdev)
 	if (clear_flag)
 		wl_clr_drv_status(wl, SCANNING, ndev);
 
+	if (!wl->p2p_supported)
+		return;
+
 	ret = wl_cfgp2p_disable_discovery(wl);
 	if (unlikely(ret < 0)) {
 		CFGP2P_ERR(("P2P disable discovery failed, ret=%d\n", ret));
@@ -2648,7 +2738,10 @@ wl_cfgp2p_del_p2p_disc_if(struct wireless_dev *wdev)
 
 	WL_TRACE(("Enter\n"));
 
+	rtnl_lock();
+	/* cfg80211_unregister_wdev() requires RTNL to be held */
 	cfg80211_unregister_wdev(wdev);
+	rtnl_unlock();
 
 	kfree(wdev);
 

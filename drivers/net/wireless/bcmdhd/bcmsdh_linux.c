@@ -1,7 +1,7 @@
 /*
  * SDIO access interface for drivers - linux specific (pci only)
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -41,13 +41,13 @@
 #include <bcmdefs.h>
 #include <bcmdevs.h>
 
-#if defined(OOB_INTR_ONLY)
+#if defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID)
 #include <linux/irq.h>
 extern void dhdsdio_isr(void * args);
 #include <bcmutils.h>
 #include <dngl_stats.h>
 #include <dhd.h>
-#endif 
+#endif /* defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 
 /**
  * SDIO Host Controller info
@@ -69,9 +69,9 @@ struct bcmsdh_hc {
 	unsigned long oob_flags; /* OOB Host specifiction as edge and etc */
 	bool oob_irq_registered;
 	bool oob_irq_enable_flag;
-#if defined(OOB_INTR_ONLY)
+#if defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID)
 	spinlock_t irq_lock;
-#endif 
+#endif /* defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 };
 static bcmsdh_hc_t *sdhcinfo = NULL;
 
@@ -134,7 +134,7 @@ bcmsdh_chipmatch(uint16 vendor, uint16 device)
 }
 
 #if defined(BCMPLATFORM_BUS)
-#if defined(BCMLXSDMMC)
+#if defined(BCMLXSDMMC) || defined(BCMSPI_ANDROID)
 /* forward declarations */
 int bcmsdh_probe(struct device *dev);
 int bcmsdh_remove(struct device *dev);
@@ -146,34 +146,34 @@ EXPORT_SYMBOL(bcmsdh_remove);
 /* forward declarations */
 static int __devinit bcmsdh_probe(struct device *dev);
 static int __devexit bcmsdh_remove(struct device *dev);
-#endif 
+#endif /* defined(BCMLXSDMMC) || defined(BCMSPI_ANDROID) */
 
-#if !defined(BCMLXSDMMC)
+#if !defined(BCMLXSDMMC) && !defined(BCMSPI_ANDROID)
 static
-#endif 
+#endif /* !defined(BCMLXSDMMC) && !defined(BCMSPI_ANDROID) */
 int bcmsdh_probe(struct device *dev)
 {
 	osl_t *osh = NULL;
 	bcmsdh_hc_t *sdhc = NULL, *sdhc_org = sdhcinfo;
 	ulong regs = 0;
 	bcmsdh_info_t *sdh = NULL;
-#if !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS)
+#if !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS) && !defined(BCMSPI_ANDROID)
 	struct platform_device *pdev;
 	struct resource *r;
-#endif 
+#endif /* !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS) && !defined(BCMSPI_ANDROID) */
 	int irq = 0;
 	uint32 vendevid;
 	unsigned long irq_flags = 0;
 
-#if !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS)
+#if !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS) && !defined(BCMSPI_ANDROID)
 	pdev = to_platform_device(dev);
 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	irq = platform_get_irq(pdev, 0);
 	if (!r || irq < 0)
 		return -ENXIO;
-#endif 
+#endif /* !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS) && !defined(BCMSPI_ANDROID) */
 
-#if defined(OOB_INTR_ONLY)
+#if defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID)
 #ifdef HW_OOB
 	irq_flags =
 		IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL | IORESOURCE_IRQ_SHAREABLE;
@@ -187,7 +187,7 @@ int bcmsdh_probe(struct device *dev)
 		SDLX_MSG(("%s: Host irq is not defined\n", __FUNCTION__));
 		goto err;
 	}
-#endif 
+#endif /* defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 	/* allocate SDIO Host Controller state info */
 	if (!(osh = osl_attach(dev, PCI_BUS, FALSE))) {
 		SDLX_MSG(("%s: osl_attach failed\n", __FUNCTION__));
@@ -204,7 +204,7 @@ int bcmsdh_probe(struct device *dev)
 
 	sdhc->dev = (void *)dev;
 
-#if defined(BCMLXSDMMC)
+#if defined(BCMLXSDMMC) || defined(BCMSPI_ANDROID)
 	if (!(sdh = bcmsdh_attach(osh, (void *)0,
 	                          (void **)&regs, irq))) {
 		SDLX_MSG(("%s: bcmsdh_attach failed\n", __FUNCTION__));
@@ -216,15 +216,15 @@ int bcmsdh_probe(struct device *dev)
 		SDLX_MSG(("%s: bcmsdh_attach failed\n", __FUNCTION__));
 		goto err;
 	}
-#endif 
+#endif /* defined(BCMLXSDMMC) || defined(BCMSPI_ANDROID) */
 	sdhc->sdh = sdh;
 	sdhc->oob_irq = irq;
 	sdhc->oob_flags = irq_flags;
 	sdhc->oob_irq_registered = FALSE;	/* to make sure.. */
 	sdhc->oob_irq_enable_flag = FALSE;
-#if defined(OOB_INTR_ONLY)
+#if defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID)
 	spin_lock_init(&sdhc->irq_lock);
-#endif 
+#endif /* defined(BCMLXSDMMC) || defined(BCMSPI_ANDROID) */
 
 	/* chain SDIO Host Controller info together */
 	sdhc->next = sdhcinfo;
@@ -260,9 +260,9 @@ err:
 	return -ENODEV;
 }
 
-#if !defined(BCMLXSDMMC)
+#if !defined(BCMLXSDMMC) && !defined(BCMSPI_ANDROID)
 static
-#endif 
+#endif /* !defined(BCMLXSDMMC) && !defined(BCMSPI_ANDROID) */
 int bcmsdh_remove(struct device *dev)
 {
 	bcmsdh_hc_t *sdhc, *prev;
@@ -309,9 +309,9 @@ int bcmsdh_remove(struct device *dev)
 	MFREE(osh, sdhc, sizeof(bcmsdh_hc_t));
 	osl_detach(osh);
 
-#if !defined(BCMLXSDMMC) || defined(OOB_INTR_ONLY)
+#if !defined(BCMLXSDMMC) || defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID)
 	dev_set_drvdata(dev, NULL);
-#endif 
+#endif /* !defined(BCMLXSDMMC) || defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 
 	return 0;
 }
@@ -538,7 +538,11 @@ bcmsdh_pci_remove(struct pci_dev *pdev)
 #endif /* BCMLXSDMMC */
 #endif /* BCMPLATFORM_BUS */
 
+#ifdef BCMSPI_ANDROID
+extern int spi_function_init(void);
+#else
 extern int sdio_function_init(void);
+#endif /* BCMSPI_ANDROID */
 
 extern int sdio_func_reg_notify(void* semaphore);
 extern void sdio_func_unreg_notify(void);
@@ -563,8 +567,13 @@ bcmsdh_register(bcmsdh_driver_t *driver)
 	drvinfo = *driver;
 
 #if defined(BCMPLATFORM_BUS)
+#ifdef BCMSPI_ANDROID
+	SDLX_MSG(("Linux Kernel SPI Driver\n"));
+	error = spi_function_init();
+#else /* BCMSPI_ANDROID */
 	SDLX_MSG(("Linux Kernel SDIO/MMC Driver\n"));
 	error = sdio_function_init();
+#endif /* BCMSPI_ANDROID */
 	return error;
 #endif /* defined(BCMPLATFORM_BUS) */
 
@@ -583,7 +592,11 @@ bcmsdh_register(bcmsdh_driver_t *driver)
 	return error;
 }
 
+#ifdef BCMSPI_ANDROID
+extern void spi_function_cleanup(void);
+#else
 extern void sdio_function_cleanup(void);
+#endif /* BCMSPI_ANDROID */
 
 void
 bcmsdh_unregister(void)
@@ -592,6 +605,9 @@ bcmsdh_unregister(void)
 	if (bcmsdh_pci_driver.node.next)
 #endif
 
+#ifdef BCMSPI_ANDROID
+	spi_function_cleanup();
+#endif /* BCMSPI_ANDROID */
 #if defined(BCMLXSDMMC)
 	sdio_function_cleanup();
 #endif /* BCMLXSDMMC */
@@ -601,7 +617,7 @@ bcmsdh_unregister(void)
 #endif /* BCMPLATFORM_BUS */
 }
 
-#if defined(OOB_INTR_ONLY)
+#if defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID)
 void bcmsdh_oob_intr_set(bool enable)
 {
 	static bool curstate = 1;
@@ -624,7 +640,9 @@ static irqreturn_t wlan_oob_irq(int irq, void *dev_id)
 
 	dhdp = (dhd_pub_t *)dev_get_drvdata(sdhcinfo->dev);
 
+#ifndef BCMSPI_ANDROID
 	bcmsdh_oob_intr_set(0);
+#endif /* !BCMSPI_ANDROID */
 
 	if (dhdp == NULL) {
 		SDLX_MSG(("Out of band GPIO interrupt fired way too early\n"));
@@ -655,7 +673,13 @@ int bcmsdh_register_oob_intr(void * dhdp)
 		if (error)
 			return -ENODEV;
 
+#if defined(CONFIG_ARCH_RHEA) || defined(CONFIG_ARCH_CAPRI)
+		if (device_may_wakeup(sdhcinfo->dev)) {
+#endif
 			error = enable_irq_wake(sdhcinfo->oob_irq);
+#if defined(CONFIG_ARCH_RHEA) || defined(CONFIG_ARCH_CAPRI)
+		}
+#endif
 		if (error)
 			SDLX_MSG(("%s enable_irq_wake error=%d \n", __FUNCTION__, error));
 		sdhcinfo->oob_irq_registered = TRUE;
@@ -672,9 +696,17 @@ void bcmsdh_set_irq(int flag)
 		sdhcinfo->oob_irq_enable_flag = flag;
 		if (flag) {
 			enable_irq(sdhcinfo->oob_irq);
+#if defined(CONFIG_ARCH_RHEA) || defined(CONFIG_ARCH_CAPRI)
+			if (device_may_wakeup(sdhcinfo->dev))
+#endif
 				enable_irq_wake(sdhcinfo->oob_irq);
 		} else {
+#if !(defined(BCMSPI_ANDROID) && defined(CUSTOMER_HW4) && defined(CONFIG_NKERNEL))
+#if defined(CONFIG_ARCH_RHEA) || defined(CONFIG_ARCH_CAPRI)
+			if (device_may_wakeup(sdhcinfo->dev))
+#endif
 				disable_irq_wake(sdhcinfo->oob_irq);
+#endif /* !defined(BCMSPI_ANDROID) */
 			disable_irq(sdhcinfo->oob_irq);
 		}
 	}
@@ -698,7 +730,7 @@ bool bcmsdh_is_oob_intr_registered(void)
 	else
 		return FALSE;
 }
-#endif 
+#endif /* defined(OOB_INTR_ONLY) || defined(BCMSPI_ANDROID) */
 
 #if defined(BCMLXSDMMC)
 void *bcmsdh_get_drvdata(void)

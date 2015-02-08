@@ -1,7 +1,7 @@
 /*
  * Linux cfgp2p driver
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: wl_cfgp2p.h 415640 2013-07-31 02:43:28Z $
+ * $Id: wl_cfgp2p.h 445404 2013-12-26 13:52:07Z $
  */
 #ifndef _wl_cfgp2p_h_
 #define _wl_cfgp2p_h_
@@ -147,7 +147,11 @@ enum wl_cfgp2p_status {
 /* dword align allocation */
 #define WLC_IOCTL_MAXLEN 8192
 
+#ifdef CUSTOMER_HW4
+#define CFGP2P_ERROR_TEXT		"CFGP2P-INFO2) "
+#else
 #define CFGP2P_ERROR_TEXT		"CFGP2P-ERROR) "
+#endif
 
 
 #define CFGP2P_ERR(args)									\
@@ -188,9 +192,23 @@ enum wl_cfgp2p_status {
 		add_timer(timer); \
 	} while (0);
 
-#if !defined(WL_CFG80211_P2P_DEV_IF) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
 #define WL_CFG80211_P2P_DEV_IF
-#endif /* !WL_CFG80211_P2P_DEV_IF && (LINUX_VERSION >= VERSION(3, 8, 0)) */
+
+#ifdef WL_ENABLE_P2P_IF
+#undef WL_ENABLE_P2P_IF
+#endif
+
+#ifdef WL_SUPPORT_BACKPORTED_KPATCHES
+#undef WL_SUPPORT_BACKPORTED_KPATCHES
+#endif
+#endif /* (LINUX_VERSION >= VERSION(3, 8, 0)) */
+
+#ifndef WL_CFG80211_P2P_DEV_IF
+#ifdef WL_NEWCFG_PRIVCMD_SUPPORT
+#undef WL_NEWCFG_PRIVCMD_SUPPORT
+#endif
+#endif /* WL_CFG80211_P2P_DEV_IF */
 
 #if defined(WL_ENABLE_P2P_IF) && (defined(WL_CFG80211_P2P_DEV_IF) || \
 	(LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)))
@@ -200,7 +218,7 @@ enum wl_cfgp2p_status {
 
 #if !defined(WLP2P) && (defined(WL_ENABLE_P2P_IF) || defined(WL_CFG80211_P2P_DEV_IF))
 #error WLP2P not defined
-#endif 
+#endif /* !WLP2P && (WL_ENABLE_P2P_IF || WL_CFG80211_P2P_DEV_IF) */
 
 #if defined(WL_CFG80211_P2P_DEV_IF)
 #define bcm_struct_cfgdev	struct wireless_dev
@@ -218,6 +236,10 @@ extern bool
 wl_cfgp2p_is_gas_action(void *frame, u32 frame_len);
 extern bool
 wl_cfgp2p_find_gas_subtype(u8 subtype, u8* data, u32 len);
+#ifdef CUSTOMER_HW4
+extern bool
+wl_cfgp2p_is_p2p_gas_action(void *frame, u32 frame_len);
+#endif /* CUSTOMER_HW4 */
 extern void
 wl_cfgp2p_print_actframe(bool tx, void *frame, u32 frame_len, u32 channel);
 extern s32

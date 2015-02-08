@@ -1,7 +1,7 @@
 /*
  * BCMSDH Function Driver for the native SDIO/MMC driver in the Linux Kernel
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: bcmsdh_sdmmc.c 418714 2013-08-16 13:21:09Z $
+ * $Id: bcmsdh_sdmmc.c 439169 2013-11-25 23:36:15Z $
  */
 #include <typedefs.h>
 
@@ -541,6 +541,19 @@ sdioh_iovar_op(sdioh_info_t *si, const char *name,
 		/* Now set it */
 		si->client_block_size[func] = blksize;
 
+#if defined(CUSTOMER_HW4) && defined(USE_DYNAMIC_F2_BLKSIZE)
+		if (gInstance == NULL || gInstance->func[func] == NULL) {
+			sd_err(("%s: SDIO Device not present\n", __FUNCTION__));
+			bcmerror = BCME_NORESOURCE;
+			break;
+		}
+		sdio_claim_host(gInstance->func[func]);
+		bcmerror = sdio_set_block_size(gInstance->func[func], blksize);
+		if (bcmerror)
+			sd_err(("%s: Failed to set F%d blocksize to %d\n",
+				__FUNCTION__, func, blksize));
+		sdio_release_host(gInstance->func[func]);
+#endif /* CUSTOMER_HW4 && USE_DYNAMIC_F2_BLKSIZE */
 		break;
 	}
 
@@ -1255,6 +1268,7 @@ txglomfail:
 							return SDIOH_API_RC_FAIL;
 						}
 					}
+					pkt_len += pad;
 				}
 			}
 

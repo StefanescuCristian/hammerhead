@@ -1,7 +1,7 @@
 /*
  * DHD Protocol Module for CDC and BDC.
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_cdc.c 416698 2013-08-06 07:53:34Z $
+ * $Id: dhd_cdc.c 444875 2013-12-22 07:29:44Z $
  *
  * BDC is like CDC, except it includes a header for data packets to convey
  * packet priority over the bus, and flags (e.g. to indicate checksum status
@@ -101,6 +101,9 @@ dhdcdc_cmplt(dhd_pub_t *dhd, uint32 id, uint32 len)
 
 	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
 
+#if defined(CUSTOMER_HW4)
+	DHD_OS_WAKE_LOCK(dhd);
+#endif /* OEM_ANDROID && CUSTOMER_HW4 */
 
 	do {
 		ret = dhd_bus_rxctl(dhd->bus, (uchar*)&prot->msg, cdc_len);
@@ -108,6 +111,9 @@ dhdcdc_cmplt(dhd_pub_t *dhd, uint32 id, uint32 len)
 			break;
 	} while (CDC_IOC_ID(ltoh32(prot->msg.flags)) != id);
 
+#if defined(CUSTOMER_HW4)
+	DHD_OS_WAKE_UNLOCK(dhd);
+#endif /* OEM_ANDROID && CUSTOMER_HW4 */
 
 	return ret;
 }
@@ -141,6 +147,16 @@ dhdcdc_query_ioctl(dhd_pub_t *dhd, int ifidx, uint cmd, void *buf, uint len, uin
 
 	memset(msg, 0, sizeof(cdc_ioctl_t));
 
+#ifdef BCMSPI
+	/* 11bit gSPI bus allows 2048bytes of max-data.  We restrict 'len'
+	 * value which is 8Kbytes for various 'get' commands to 2000.  48 bytes are
+	 * left for sw headers and misc.
+	 */
+	if (len > 2000) {
+		DHD_ERROR(("dhdcdc_query_ioctl: len is truncated to 2000 bytes\n"));
+		len = 2000;
+	}
+#endif /* BCMSPI */
 	msg->cmd = htol32(cmd);
 	msg->len = htol32(len);
 	msg->flags = (++prot->reqid << CDCF_IOC_ID_SHIFT);
@@ -196,6 +212,9 @@ done:
 	return ret;
 }
 
+#if defined(CUSTOMER_HW4) && defined(CONFIG_CONTROL_PM)
+extern bool g_pm_control;
+#endif /* CUSTOMER_HW4 & CONFIG_CONTROL_PM */
 
 static int
 dhdcdc_set_ioctl(dhd_pub_t *dhd, int ifidx, uint cmd, void *buf, uint len, uint8 action)
@@ -220,7 +239,25 @@ dhdcdc_set_ioctl(dhd_pub_t *dhd, int ifidx, uint cmd, void *buf, uint len, uint8
 		return -EIO;
 	}
 
-
+#if defined(CUSTOMER_HW4)
+	if (cmd == WLC_SET_PM) {
+#if defined(CONFIG_CONTROL_PM) || defined(CONFIG_PM_LOCK)
+		if (g_pm_control == TRUE) {
+			DHD_ERROR(("%s: SET PM ignored!(Requested:%d)\n",
+				__FUNCTION__, *(char *)buf));
+			goto done;
+		}
+#endif /* CONFIG_CONTROL_PM */
+#if defined(WLAIBSS)
+		if (dhd->op_mode == DHD_FLAG_IBSS_MODE) {
+			DHD_ERROR(("%s: SET PM ignored for IBSS!(Requested:%d)\n",
+				__FUNCTION__, *(char *)buf));
+			goto done;
+		}
+#endif
+		DHD_ERROR(("%s: SET PM to %d\n", __FUNCTION__, *(char *)buf));
+	}
+#endif /* CUSTOMER_HW4 */
 	memset(msg, 0, sizeof(cdc_ioctl_t));
 
 	msg->cmd = htol32(cmd);
@@ -552,10 +589,7 @@ dhd_prot_init(dhd_pub_t *dhd)
 		goto done;
 
 
-#if defined(WL_CFG80211)
-	if (dhd_download_fw_on_driverload)
-#endif /* defined(WL_CFG80211) */
-		ret = dhd_preinit_ioctls(dhd);
+	ret = dhd_preinit_ioctls(dhd);
 	/* Always assumes wl for now */
 	dhd->iswl = TRUE;
 

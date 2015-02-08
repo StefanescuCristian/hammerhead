@@ -1,7 +1,7 @@
 /*
  * Common function shared by Linux WEXT, cfg80211 and p2p drivers
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -32,12 +32,12 @@
 #include <wldev_common.h>
 #include <bcmutils.h>
 
-#define htod32(i) (i)
-#define htod16(i) (i)
-#define dtoh32(i) (i)
-#define dtoh16(i) (i)
-#define htodchanspec(i) (i)
-#define dtohchanspec(i) (i)
+#define htod32(i) i
+#define htod16(i) i
+#define dtoh32(i) i
+#define dtoh16(i) i
+#define htodchanspec(i) i
+#define dtohchanspec(i) i
 
 #define	WLDEV_ERROR(args)						\
 	do {										\

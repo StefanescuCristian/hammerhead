@@ -1,7 +1,7 @@
 /*
  * BCMSDH Function Driver for the native SDIO/MMC driver in the Linux Kernel
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -34,6 +34,10 @@
 #define sd_data(x)
 #define sd_ctrl(x)
 
+#ifdef CUSTOMER_HW4
+#undef sd_err
+#define sd_err(x) do {printf x;} while (0)
+#endif
 
 #define sd_sync_dma(sd, read, nbytes)
 #define sd_init_dma(sd)

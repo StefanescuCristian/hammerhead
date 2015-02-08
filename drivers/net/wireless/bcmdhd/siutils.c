@@ -2,7 +2,7 @@
  * Misc utility routines for accessing chip-specific features
  * of the SiliconBackplane-based Broadcom chips.
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -22,7 +22,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: siutils.c 414368 2013-07-24 15:00:23Z $
+ * $Id: siutils.c 444038 2013-12-18 09:35:07Z $
  */
 
 #include <bcm_cfg.h>
@@ -44,6 +44,9 @@
 #include <sbsdpcmdev.h>
 #include <bcmsdpcm.h>
 #include <hndpmu.h>
+#ifdef BCMSPI
+#include <spid.h>
+#endif /* BCMSPI */
 
 
 #include "siutils_priv.h"
@@ -178,6 +181,24 @@ si_buscore_prep(si_info_t *sii, uint bustype, uint devid, void *sdh)
 		bcmsdh_cfg_write(sdh, SDIO_FUNC_1, SBSDIO_FUNC1_SDIOPULLUP, 0, NULL);
 	}
 
+#ifdef BCMSPI
+	/* Avoid backplane accesses before wake-wlan (i.e. htavail) for spi.
+	 * F1 read accesses may return correct data but with data-not-available dstatus bit set.
+	 */
+	if (BUSTYPE(bustype) == SPI_BUS) {
+
+		int err;
+		uint32 regdata;
+		/* wake up wlan function :WAKE_UP goes as HT_AVAIL request in hardware */
+		regdata = bcmsdh_cfg_read_word(sdh, SDIO_FUNC_0, SPID_CONFIG, NULL);
+		SI_MSG(("F0 REG0 rd = 0x%x\n", regdata));
+		regdata |= WAKE_UP;
+
+		bcmsdh_cfg_write_word(sdh, SDIO_FUNC_0, SPID_CONFIG, regdata, &err);
+
+		OSL_DELAY(100000);
+	}
+#endif /* BCMSPI */
 
 	return TRUE;
 }

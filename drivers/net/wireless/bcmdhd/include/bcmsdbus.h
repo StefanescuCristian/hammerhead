@@ -2,7 +2,7 @@
  * Definitions for API from sdio common code (bcmsdh) to individual
  * host controller drivers.
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -157,6 +157,14 @@ extern int sdioh_sdio_reset(sdioh_info_t *si);
 void *bcmsdh_get_sdioh(bcmsdh_info_t *sdh);
 
 
+#ifdef BCMSPI
+/* Function to pass gSPI specific device-status bits to dhd. */
+extern uint32 sdioh_get_dstatus(sdioh_info_t *si);
+
+/* chipid and chiprev info for lower layers to control sw WAR's for hw bugs. */
+extern void sdioh_chipinfo(sdioh_info_t *si, uint32 chip, uint32 chiprev);
+extern void sdioh_dwordmode(sdioh_info_t *si, bool set);
+#endif /* BCMSPI */
 
 #if defined(BCMSDIOH_STD)
 	#define SDIOH_SLEEP_ENABLED

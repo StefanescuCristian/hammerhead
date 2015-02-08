@@ -1,7 +1,7 @@
 /*
  * DHD PROP_TXSTATUS Module.
  *
- * Copyright (C) 1999-2013, Broadcom Corporation
+ * Copyright (C) 1999-2014, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_wlfc.c 412994 2013-07-17 12:38:03Z $
+ * $Id: dhd_wlfc.c 444108 2013-12-18 17:39:51Z $
  *
  */
 
@@ -2330,6 +2330,66 @@ dhd_wlfc_enable(dhd_pub_t *dhd)
 	wlfc->borrow_defer_timestamp = 0;
 
 	return BCME_OK;
+}
+
+int
+dhd_wlfc_suspend(dhd_pub_t *dhd)
+{
+
+	uint32 iovbuf[4]; /* Room for "tlv" + '\0' + parameter */
+	uint32 tlv = 0;
+
+	DHD_TRACE(("%s: masking wlfc events\n", __FUNCTION__));
+	if (!dhd->wlfc_enabled)
+		return -1;
+
+	bcm_mkiovar("tlv", NULL, 0, (char*)iovbuf, sizeof(iovbuf));
+	if (dhd_wl_ioctl_cmd(dhd, WLC_GET_VAR, iovbuf, sizeof(iovbuf), FALSE, 0) < 0) {
+		DHD_ERROR(("%s: failed to get bdcv2 tlv signaling\n", __FUNCTION__));
+		return -1;
+	}
+	tlv = iovbuf[0];
+	if ((tlv & (WLFC_FLAGS_RSSI_SIGNALS | WLFC_FLAGS_XONXOFF_SIGNALS)) == 0)
+		return 0;
+	tlv &= ~(WLFC_FLAGS_RSSI_SIGNALS | WLFC_FLAGS_XONXOFF_SIGNALS);
+	bcm_mkiovar("tlv", (char *)&tlv, 4, (char*)iovbuf, sizeof(iovbuf));
+	if (dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0) < 0) {
+		DHD_ERROR(("%s: failed to set bdcv2 tlv signaling to 0x%x\n",
+			__FUNCTION__, tlv));
+		return -1;
+	}
+
+	return 0;
+}
+
+int
+dhd_wlfc_resume(dhd_pub_t *dhd)
+{
+	uint32 iovbuf[4]; /* Room for "tlv" + '\0' + parameter */
+	uint32 tlv = 0;
+
+	DHD_TRACE(("%s: unmasking wlfc events\n", __FUNCTION__));
+	if (!dhd->wlfc_enabled)
+		return -1;
+
+	bcm_mkiovar("tlv", NULL, 0, (char*)iovbuf, sizeof(iovbuf));
+	if (dhd_wl_ioctl_cmd(dhd, WLC_GET_VAR, iovbuf, sizeof(iovbuf), FALSE, 0) < 0) {
+		DHD_ERROR(("%s: failed to get bdcv2 tlv signaling\n", __FUNCTION__));
+		return -1;
+	}
+	tlv = iovbuf[0];
+	if ((tlv & (WLFC_FLAGS_RSSI_SIGNALS | WLFC_FLAGS_XONXOFF_SIGNALS)) ==
+		(WLFC_FLAGS_RSSI_SIGNALS | WLFC_FLAGS_XONXOFF_SIGNALS))
+		return 0;
+	tlv |= (WLFC_FLAGS_RSSI_SIGNALS | WLFC_FLAGS_XONXOFF_SIGNALS);
+	bcm_mkiovar("tlv", (char *)&tlv, 4, (char*)iovbuf, sizeof(iovbuf));
+	if (dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, (char*)iovbuf, sizeof(iovbuf), TRUE, 0) < 0) {
+		DHD_ERROR(("%s: failed to set bdcv2 tlv signaling to 0x%x\n",
+			__FUNCTION__, tlv));
+		return -1;
+	}
+
+	return 0;
 }
 
 /* release all packet resources */
