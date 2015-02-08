@@ -164,7 +164,7 @@ dhd_custom_get_mac_address(unsigned char *buf)
 		return -EINVAL;
 
 	/* Customer access to MAC address stored outside of DHD driver */
-#if (0 || 0) && (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35))
+#if (1) && (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35))
 	ret = wifi_get_mac_addr(buf);
 #endif
 
