@@ -122,7 +122,7 @@ do {									\
 #ifdef CUSTOMER_HW4
 #define	WL_TRACE_HW4(args)					\
 do {										\
-	if (wl_dbg_level & WL_DBG_ERR) {				\
+	if (wl_dbg_level & WL_DBG_TRACE) {				\
 			printk(KERN_INFO "CFG80211-TRACE) %s : ", __func__);	\
 			printk args;						\
 		} 								\
