@@ -640,10 +640,6 @@ extern void dhd_os_sdunlock_eventq(dhd_pub_t * pub);
 extern bool dhd_os_check_hang(dhd_pub_t *dhdp, int ifidx, int ret);
 extern int dhd_os_send_hang_message(dhd_pub_t *dhdp);
 extern void dhd_set_version_info(dhd_pub_t *pub, char *fw);
-extern void dhd_set_short_dwell_time(dhd_pub_t *dhd, int set);
-#ifdef CUSTOM_SET_SHORT_DWELL_TIME
-extern void net_set_short_dwell_time(struct net_device *dev, int set);
-#endif
 
 #if defined(KEEP_ALIVE)
 extern int dhd_keep_alive_onoff(dhd_pub_t *dhd);

@@ -133,8 +133,6 @@ DHDCFLAGS += -DWL_NEWCFG_PRIVCMD_SUPPORT
 ##########################
 DRIVER_TYPE ?= m
 
-DHDCFLAGS += -DCUSTOM_SET_SHORT_DWELL_TIME
-
 #########################
 # Chip dependent feature
 #########################
