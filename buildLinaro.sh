@@ -1,6 +1,6 @@
 #!/bin/bash
-#Linaro - https://github.com/Christopher83/arm-cortex_a15-linux-gnueabihf-linaro_4.9.git
-export CROSS_COMPILE="ccache ../arm-cortex_a15-linux-gnueabihf-linaro_4.9/bin/arm-cortex_a15-linux-gnueabihf-"
+#Linaro - https://github.com/Team-Validus/linaro-arm-eabi-4.9.git
+export CROSS_COMPILE="ccache ../linaro-arm-eabi-4.9/bin/arm-eabi-"
 echo "LN" > .tc
 rm *Linaro.img *Linaro.zip
 
