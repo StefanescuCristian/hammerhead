@@ -246,18 +246,12 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = ccache gcc
 HOSTCXX      = ccache g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
--Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
--fgraphite -fgraphite-identity -fira-loop-pressure -fivopts -floop-block -floop-flatten \
--floop-interchange -floop-nest-optimize -floop-parallelize-all \
--floop-strip-mine -fpredictive-commoning -fprefetch-loop-arrays -fmodulo-sched \
--fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
--fsched-spec-load -fschedule-insns2 -fsingle-precision-constant \
--fselective-scheduling -fselective-scheduling2 -fsel-sched-pipelining \
--fsel-sched-pipelining-outer-loops -ftracer \
--ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
--ftree-vectorize -funroll-loops \
--funsafe-loop-optimizations \
--pipe
+-O2 -DNDEBUG -floop-interchange -floop-strip-mine \
+-floop-block -floop-parallelize-all -fgraphite -fgraphite-identity \
+-fgcse-after-reload -fgcse-sm -fgcse-las -fweb -frename-registers \
+-ftree-loop-im -ftree-loop-linear -ftree-loop-ivcanon -fivopts \
+-ftree-vectorize -ffast-math -fmodulo-sched -ftracer -pipe
+
 HOSTCXXFLAGS = ${HOSTCFLAGS}
 
 # Decide whether to build built-in, modular, or both.
@@ -363,20 +357,14 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS	= -Ofast -DNDEBUG -ffast-math -fforce-addr -fgcse-lm -fgcse-sm \
--fgraphite -fgraphite-identity -fira-loop-pressure -fivopts -floop-block -floop-flatten \
--floop-interchange -floop-nest-optimize -floop-parallelize-all \
--floop-strip-mine -fpredictive-commoning -fprefetch-loop-arrays -fmodulo-sched \
--fmodulo-sched-allow-regmoves -fno-inline-functions -fpeel-loops \
--fsched-spec-load -fschedule-insns2 -fsection-anchors -fsingle-precision-constant \
--fselective-scheduling -fselective-scheduling2 -fsel-sched-pipelining \
--fsel-sched-pipelining-outer-loops -ftracer \
--ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon -ftree-loop-linear \
--ftree-vectorize -funroll-loops \
--funsafe-loop-optimizations -marm -mcpu=cortex-a15 \
--mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access \
--mvectorize-with-neon-quad -pipe \
---param l1-cache-line-size=64 --param l1-cache-size=32 --param l2-cache-size=2048
+KERNELFLAGS	= -O2 -DNDEBUG -floop-interchange -floop-strip-mine \
+-floop-block -floop-parallelize-all -fgraphite -fgraphite-identity \
+-fgcse-after-reload -fgcse-sm -fgcse-las -fweb -frename-registers \
+-ftree-loop-im -ftree-loop-linear -ftree-loop-ivcanon -fivopts \
+-ftree-vectorize -ffast-math -fmodulo-sched -ftracer \
+-mtune=cortex-a15 -mcpu=cortex-a15 -marm \
+-munaligned-access -mvectorize-with-neon-quad -pipe
+
 CC		+= $(KERNELFLAGS)
 CPP		+= $(KERNELFLAGS)
 MODFLAGS	= -DMODULE -DNDEBUG $(KERNELFLAGS)
@@ -595,7 +583,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
-KBUILD_CFLAGS	+= -Ofast
+KBUILD_CFLAGS	+= -O2
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
