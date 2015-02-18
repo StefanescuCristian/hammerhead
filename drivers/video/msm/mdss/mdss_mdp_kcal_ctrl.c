@@ -83,7 +83,7 @@ static ssize_t kcal_min_store(struct device *dev,
 	int kcal_min;
 	struct kcal_lut_data *lut_data = dev_get_drvdata(dev);
 
-	if (count > 4)
+	if (count > 3)
 		return -EINVAL;
 
 	sscanf(buf, "%d", &kcal_min);
@@ -112,7 +112,7 @@ static ssize_t kcal_enable_store(struct device *dev,
 	int kcal_enable;
 	struct kcal_lut_data *lut_data = dev_get_drvdata(dev);
 
-	if (count != 2)
+	if (count > 2)
 		return -EINVAL;
 
 	sscanf(buf, "%d", &kcal_enable);
@@ -144,7 +144,7 @@ static ssize_t kcal_invert_store(struct device *dev,
 	int kcal_invert;
 	struct kcal_lut_data *lut_data = dev_get_drvdata(dev);
 
-	if (count != 2)
+	if (count > 2)
 		return -EINVAL;
 
 	sscanf(buf, "%d", &kcal_invert);
@@ -176,7 +176,7 @@ static ssize_t kcal_sat_store(struct device *dev,
 	int kcal_sat;
 	struct kcal_lut_data *lut_data = dev_get_drvdata(dev);
 
-	if (count != 4)
+	if (count > 4)
 		return -EINVAL;
 
 	sscanf(buf, "%d", &kcal_sat);
@@ -234,7 +234,7 @@ static ssize_t kcal_val_store(struct device *dev,
 	int kcal_val;
 	struct kcal_lut_data *lut_data = dev_get_drvdata(dev);
 
-	if (count != 4)
+	if (count > 4)
 		return -EINVAL;
 
 	sscanf(buf, "%d", &kcal_val);
@@ -263,7 +263,7 @@ static ssize_t kcal_cont_store(struct device *dev,
 	int kcal_cont;
 	struct kcal_lut_data *lut_data = dev_get_drvdata(dev);
 
-	if (count != 4)
+	if (count > 4)
 		return -EINVAL;
 
 	sscanf(buf, "%d", &kcal_cont);
