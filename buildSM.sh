@@ -1,6 +1,6 @@
 #!/bin/bash
-#SM - https://github.com/SaberMod/arm-eabi-4.8.git
-export CROSS_COMPILE="ccache ../arm-eabi-4.8/bin/arm-eabi-"
+#SM - https://gitorious.org/sabermod/arm-eabi-4_9.git
+export CROSS_COMPILE="ccache ../arm-eabi-4_9/bin/arm-eabi-"
 echo "SM" > .tc
 rm *SM.img *SM.zip
 
