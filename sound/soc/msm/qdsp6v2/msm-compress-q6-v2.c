@@ -799,12 +799,43 @@ static int msm_compr_set_params(struct snd_compr_stream *cstream,
 
 	pr_debug("%s\n", __func__);
 
-	num_rates = sizeof(supported_sample_rates)/sizeof(unsigned int);
-	for (i = 0; i < num_rates; i++)
-		if (params->codec.sample_rate == supported_sample_rates[i])
-			break;
-	if (i == num_rates)
-		return -EINVAL;
+	memcpy(&prtd->codec_param, params, sizeof(struct snd_compr_params));
+
+	/* ToDo: remove duplicates */
+	prtd->num_channels = prtd->codec_param.codec.ch_in;
+
+	switch (prtd->codec_param.codec.sample_rate) {
+	case SNDRV_PCM_RATE_8000:
+		prtd->sample_rate = 8000;
+		break;
+	case SNDRV_PCM_RATE_11025:
+		prtd->sample_rate = 11025;
+		break;
+	/* ToDo: What about 12K and 24K sample rates ? */
+	case SNDRV_PCM_RATE_16000:
+		prtd->sample_rate = 16000;
+		break;
+	case SNDRV_PCM_RATE_22050:
+		prtd->sample_rate = 22050;
+		break;
+	case SNDRV_PCM_RATE_32000:
+		prtd->sample_rate = 32000;
+		break;
+	case SNDRV_PCM_RATE_44100:
+		prtd->sample_rate = 44100;
+		break;
+	case SNDRV_PCM_RATE_48000:
+		prtd->sample_rate = 48000;
+		break;
+	case SNDRV_PCM_RATE_96000:
+		prtd->sample_rate = 96000;
+		break;
+	case SNDRV_PCM_RATE_192000:
+		prtd->sample_rate = 192000;
+		break;
+	}
+
+	pr_debug("%s: sample_rate %d\n", __func__, prtd->sample_rate);
 
 	switch (params->codec.id) {
 	case SND_AUDIOCODEC_PCM: {

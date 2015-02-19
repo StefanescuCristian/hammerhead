@@ -21,6 +21,12 @@ Required properties:
       - qti,msm-pcm-low-latency : Flag indicating whether
         the device node is of type low latency.
 
+      - qti,latency-level : Flag indicating whether the device node
+                            is of type regular low latency or ultra
+                            low latency.
+                            regular : regular low latency stream
+                            ultra : ultra low latency stream
+
 * msm-pcm-routing
 
 Required properties:
@@ -413,6 +419,17 @@ Example:
 Required properties:
 - compatible : "qcom,msm8974-audio-taiko"
 - qcom,model : The user-visible name of this sound card.
+- reg : Offset and length of the register region(s) for MI2S/PCM MUX
+- reg-names : Register region name(s) referenced in reg above
+	 Required register resource entries are:
+	 "lpaif_pri_mode_muxsel": Physical address of MUX to select between
+				  Primary PCM and Primary MI2S
+	 "lpaif_sec_mode_muxsel": Physical address of MUX to select between
+				  Secondary PCM and Secondary MI2S
+	 "lpaif_tert_mode_muxsel": Physical address of MUX to select between
+				   Primary PCM and Tertiary MI2S
+	 "lpaif_quat_mode_muxsel": Physical address of MUX to select between
+				   Secondary PCM and Quarternary MI2S
 - qcom,audio-routing : A list of the connections between audio components.
   Each entry is a pair of strings, the first being the connection's sink,
   the second being the connection's source.
@@ -441,7 +458,15 @@ Optional properties:
 
 - qcom,headset-jack-type-NO: Adjust GPIO level based on the headset jack type.
 
-
+- qcom,tapan-codec-9302: Indicates that this device node is for WCD9302 audio
+			    codec.
+- qcom,mbhc-bias-internal: Flag to indicate if internal micbias should be used
+			   for headset detection.
+- qcom,mbhc-audio-jack-type : String to indicate the jack type on the hardware.
+		Possible Values:
+		4-pole-jack : Jack on the hardware is 4-pole.
+		5-pole-jack : Jack on the hardware is 5-pole.
+		6-pole-jack : Jack on the hardware is 6-pole.
 * APQ8074 ASoC Machine driver
 
 Required properties:
@@ -498,6 +523,7 @@ sound {
 	qcom,sec-auxpcm-gpio-sync = <&msmgpio 80 0>;
 	qcom,sec-auxpcm-gpio-din  = <&msmgpio 81 0>;
 	qcom,sec-auxpcm-gpio-dout = <&msmgpio 82 0>;
+	qcom,mbhc-audio-jack-type = "4-pole-jack";
 };
 
 * msm-dai-mi2s

@@ -11,6 +11,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/slab.h>
 #include <sound/soc.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
@@ -28,6 +29,389 @@
 
 #define BUCK_SETTLE_TIME_US 50
 #define NCP_SETTLE_TIME_US 50
+
+#define MAX_IMPED_PARAMS 13
+
+#define USLEEP_RANGE_MARGIN_US 100
+
+struct wcd9xxx_imped_val {
+	u32 imped_val;
+	u8 index;
+};
+
+static const struct wcd9xxx_reg_mask_val imped_table[][MAX_IMPED_PARAMS] = {
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x46},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x04},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x11},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x9B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x15},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x04},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x0C},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x47},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x05},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x11},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x9B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x15},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x05},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x0C},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x49},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x07},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x12},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x35},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x4E},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x06},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x0E},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x49},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x16},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAC},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x17},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x5F},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xCF},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x06},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x0F},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x59},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x15},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x9C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xCE},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xBD},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x07},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x10},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x66},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x04},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x9A},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x02},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2E},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xBD},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xA6},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x07},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x11},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x79},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x04},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x11},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x37},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xA6},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAD},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x08},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x12},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x76},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x04},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x11},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x4E},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAD},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAC},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x09},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x12},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x78},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x05},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x12},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xD0},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAC},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x13},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x0A},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x13},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x7A},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x06},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x14},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xB7},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x13},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x14},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x0B},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x14},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x60},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x09},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xA4},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x14},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1F},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x0C},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x14},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x79},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x17},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x25},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAE},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1F},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1D},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x0D},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x15},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x78},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x16},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAC},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1D},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x0E},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x16},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x89},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x05},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x40},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x13},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x10},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x16},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x97},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x05},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xD0},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x14},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x12},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x17},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x8A},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x06},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xB7},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x10},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x24},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x13},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x17},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x8A},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x07},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xA4},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1D},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x24},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x25},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x15},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x18},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x9A},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x08},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAE},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x25},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x27},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x18},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x19},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x8B},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x18},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0xAC},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x01},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x20},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2E},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x1A},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x19},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0x9A},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x17},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x13},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1B},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2E},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2D},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x1D},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x1A},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0xA9},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x06},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x14},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x24},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2D},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x1F},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x19},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0xB9},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x06},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x10},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x25},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x23},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x18},
+	},
+	{
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_L, 0xff, 0xA9},
+		{WCD9XXX_A_CDC_CLSH_I_PA_FACT_HPH_U, 0xff, 0x07},
+		{WCD9XXX_A_CDC_CLSH_K_ADDR, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x1D},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x27},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x2C},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x35},
+		{WCD9XXX_A_CDC_CLSH_K_DATA, 0xff, 0x00},
+		{WCD9XXX_A_CDC_CLSH_IDLE_HPH_THSD, 0xff, 0x26},
+		{WCD9XXX_A_CDC_CLSH_FCLKONLY_HPH_THSD, 0xff, 0x16},
+	},
+};
+
+static const struct wcd9xxx_imped_val imped_index[] = {
+	{4000, 0},
+	{4500, 1},
+	{5000, 2},
+	{5500, 3},
+	{6000, 4},
+	{6500, 5},
+	{7000, 6},
+	{7700, 7},
+	{8470, 8},
+	{9317, 9},
+	{10248, 10},
+	{11273, 11},
+	{12400, 12},
+	{13641, 13},
+	{15005, 14},
+	{16505, 15},
+	{18156, 16},
+	{19971, 17},
+	{21969, 18},
+	{24165, 19},
+	{26582, 20},
+	{29240, 21},
+	{32164, 22},
+};
 
 static inline void
 wcd9xxx_enable_clsh_block(struct snd_soc_codec *codec,
@@ -162,7 +546,7 @@ static void wcd9xxx_chargepump_request(struct snd_soc_codec *codec, bool on)
 
 void wcd9xxx_enable_high_perf_mode(struct snd_soc_codec *codec,
 				struct wcd9xxx_clsh_cdc_data *clsh_d,
-				u8 req_state, bool req_type)
+				u8 uhqa_mode, u8 req_state, bool req_type)
 {
 	dev_dbg(codec->dev, "%s: users fclk8 %d, fclk5 %d", __func__,
 			clsh_d->ncp_users[NCP_FCLK_LEVEL_8],
@@ -174,8 +558,9 @@ void wcd9xxx_enable_high_perf_mode(struct snd_soc_codec *codec,
 					WCD9XXX_A_RX_HPH_BIAS_PA__POR);
 		snd_soc_write(codec, WCD9XXX_A_RX_HPH_L_PA_CTL, 0x48);
 		snd_soc_write(codec, WCD9XXX_A_RX_HPH_R_PA_CTL, 0x48);
-		snd_soc_update_bits(codec, WCD9XXX_A_RX_HPH_CHOP_CTL,
-					0x20, 0x00);
+		if (uhqa_mode)
+			snd_soc_update_bits(codec, WCD9XXX_A_RX_HPH_CHOP_CTL,
+						0x20, 0x00);
 		wcd9xxx_chargepump_request(codec, true);
 		wcd9xxx_enable_anc_delay(codec, true);
 		wcd9xxx_enable_buck(codec, clsh_d, false);
@@ -211,6 +596,46 @@ void wcd9xxx_enable_high_perf_mode(struct snd_soc_codec *codec,
 }
 EXPORT_SYMBOL(wcd9xxx_enable_high_perf_mode);
 
+static int get_impedance_index(u32 imped)
+{
+	int i = 0;
+	if (imped < imped_index[i].imped_val) {
+		pr_debug("%s, detected impedance is less than 4 Ohm\n",
+				__func__);
+		goto ret;
+	}
+	if (imped >= imped_index[ARRAY_SIZE(imped_index) - 1].imped_val) {
+		pr_debug("%s, detected impedance is greater than 32164 Ohm\n",
+				__func__);
+		i = ARRAY_SIZE(imped_index) - 1;
+		goto ret;
+	}
+	for (i = 0; i < ARRAY_SIZE(imped_index) - 1; i++) {
+		if (imped >= imped_index[i].imped_val &&
+			imped < imped_index[i + 1].imped_val)
+			break;
+	}
+ret:
+	pr_debug("%s: selected impedance index = %d\n",
+			__func__, imped_index[i].index);
+	return imped_index[i].index;
+}
+
+void wcd9xxx_clsh_imped_config(struct snd_soc_codec *codec,
+				  int imped)
+{
+	int i  = 0;
+	int index = 0;
+	index = get_impedance_index(imped);
+	if (index >= ARRAY_SIZE(imped_index)) {
+		pr_err("%s, invalid imped = %d\n", __func__, imped);
+		return;
+	}
+	for (i = 0; i < MAX_IMPED_PARAMS; i++)
+		snd_soc_write(codec, imped_table[index][i].reg,
+					imped_table[index][i].val);
+}
+
 static void wcd9xxx_clsh_comp_req(struct snd_soc_codec *codec,
 				  struct wcd9xxx_clsh_cdc_data *clsh_d,
 				  int compute_pa, bool on)
@@ -245,14 +670,77 @@ static void wcd9xxx_clsh_comp_req(struct snd_soc_codec *codec,
 	}
 }
 
+int wcd9xxx_soc_update_bits_push(struct snd_soc_codec *codec,
+					struct list_head *list,
+					uint16_t reg, uint8_t mask,
+					uint8_t value, int delay)
+{
+	int rc;
+	struct wcd9xxx_register_save_node *node;
+
+	node = kmalloc(sizeof(*node), GFP_KERNEL);
+	if (unlikely(!node)) {
+		pr_err("%s: Not enough memory\n", __func__);
+		return -ENOMEM;
+	}
+	node->reg = reg;
+	node->value = snd_soc_read(codec, reg);
+	list_add(&node->lh, list);
+	if (mask == 0xFF)
+		rc = snd_soc_write(codec, reg, value);
+	else
+		rc = snd_soc_update_bits(codec, reg, mask, value);
+	if (delay)
+		usleep_range(delay, delay + USLEEP_RANGE_MARGIN_US);
+	return rc;
+}
+EXPORT_SYMBOL(wcd9xxx_soc_update_bits_push);
+
+void wcd9xxx_restore_registers(struct snd_soc_codec *codec,
+			       struct list_head *lh)
+{
+	struct wcd9xxx_register_save_node *node, *nodetmp;
+
+	list_for_each_entry_safe(node, nodetmp, lh, lh) {
+		snd_soc_write(codec, node->reg, node->value);
+		list_del(&node->lh);
+		kfree(node);
+	}
+}
+EXPORT_SYMBOL(wcd9xxx_restore_registers);
+
+static void wcd9xxx_dynamic_bypass_buck_ctrl_lo(struct snd_soc_codec *cdc,
+						bool enable)
+{
+	int i;
+	const struct wcd9xxx_reg_mask_val reg_set[] = {
+		{WCD9XXX_A_BUCK_MODE_3, (0x1 << 3), (enable << 3)},
+		{WCD9XXX_A_BUCK_MODE_5, enable ? 0xFF : 0x02, 0x02},
+		{WCD9XXX_A_BUCK_MODE_5, 0x1, 0x01}
+	};
+
+	if (!enable) {
+		snd_soc_update_bits(cdc, WCD9XXX_A_BUCK_MODE_1,
+					(0x1 << 3), 0x00);
+		snd_soc_update_bits(cdc, WCD9XXX_A_BUCK_MODE_4,
+					0xFF, BUCK_VREF_2V);
+	}
+	for (i = 0; i < ARRAY_SIZE(reg_set); i++)
+		snd_soc_update_bits(cdc, reg_set[i].reg, reg_set[i].mask,
+							reg_set[i].val);
+
+	/* 50us sleep is reqd. as per the class H HW design sequence */
+	usleep_range(BUCK_SETTLE_TIME_US, BUCK_SETTLE_TIME_US+10);
+}
+
 static void wcd9xxx_dynamic_bypass_buck_ctrl(struct snd_soc_codec *cdc,
 						bool enable)
 {
 	int i;
 	const struct wcd9xxx_reg_mask_val reg_set[] = {
 		{WCD9XXX_A_BUCK_MODE_3, (0x1 << 3), (enable << 3)},
-		{WCD9XXX_A_BUCK_MODE_5, (0x1 << 1), (enable << 1)},
-		{WCD9XXX_A_BUCK_MODE_5, 0x1, enable}
+		{WCD9XXX_A_BUCK_MODE_5, (0x1 << 1), ((!enable) << 1)},
+		{WCD9XXX_A_BUCK_MODE_5, 0x1, !enable}
 	};
 	if (!enable) {
 		snd_soc_update_bits(cdc, WCD9XXX_A_BUCK_MODE_1,
@@ -336,7 +824,7 @@ static void wcd9xxx_set_fclk_get_ncp(struct snd_soc_codec *codec,
 
 	/* enable NCP and wait until settles down */
 	if (snd_soc_update_bits(codec, WCD9XXX_A_NCP_EN, 0x01, 0x01))
-		usleep_range(NCP_SETTLE_TIME_US, NCP_SETTLE_TIME_US);
+		usleep_range(NCP_SETTLE_TIME_US, NCP_SETTLE_TIME_US + 50);
 	pr_debug("%s: leave\n", __func__);
 }
 
@@ -517,7 +1005,7 @@ static void wcd9xxx_clsh_state_hph_lo(struct snd_soc_codec *codec,
 	if (is_enable) {
 		if ((clsh_d->state == WCD9XXX_CLSH_STATE_LO) ||
 			(req_state == WCD9XXX_CLSH_STATE_LO)) {
-			wcd9xxx_dynamic_bypass_buck_ctrl(codec, false);
+			wcd9xxx_dynamic_bypass_buck_ctrl_lo(codec, false);
 			wcd9xxx_enable_buck(codec, clsh_d, true);
 			wcd9xxx_set_fclk_get_ncp(codec, clsh_d,
 						NCP_FCLK_LEVEL_8);
@@ -539,7 +1027,7 @@ static void wcd9xxx_clsh_state_hph_lo(struct snd_soc_codec *codec,
 		case WCD9XXX_CLSH_STATE_LO:
 			snd_soc_update_bits(codec, WCD9XXX_A_NCP_STATIC,
 						0x20, 0x00);
-			wcd9xxx_dynamic_bypass_buck_ctrl(codec, true);
+			wcd9xxx_dynamic_bypass_buck_ctrl_lo(codec, true);
 			break;
 		case WCD9XXX_CLSH_STATE_HPHL:
 			wcd9xxx_clsh_comp_req(codec, clsh_d,
@@ -551,7 +1039,7 @@ static void wcd9xxx_clsh_state_hph_lo(struct snd_soc_codec *codec,
 			break;
 		default:
 			dev_dbg(codec->dev,
-				 "%s:Invalid state:0x%x,enable:0x%x\n",
+				"%s:Invalid state:0x%x,enable:0x%x\n",
 				__func__, req_state, is_enable);
 			break;
 		}
@@ -681,6 +1169,7 @@ static void wcd9xxx_clsh_state_ear(struct snd_soc_codec *codec,
 		wcd9xxx_clsh_comp_req(codec, clsh_d, CLSH_COMPUTE_EAR, false);
 		wcd9xxx_chargepump_request(codec, false);
 		wcd9xxx_enable_clsh_block(codec, clsh_d, false);
+		clsh_d->state &= ~WCD9XXX_CLSH_STATE_EAR;
 	}
 }
 
@@ -697,7 +1186,11 @@ static void wcd9xxx_clsh_state_hph_l(struct snd_soc_codec *codec,
 		wcd9xxx_chargepump_request(codec, true);
 		wcd9xxx_enable_anc_delay(codec, true);
 		wcd9xxx_clsh_comp_req(codec, clsh_d, CLSH_COMPUTE_HPH_L, true);
-		wcd9xxx_set_buck_mode(codec, BUCK_VREF_0P494V);
+		pr_debug("%s class state: %d\n", __func__, clsh_d->state);
+		if (clsh_d->state & WCD9XXX_CLSH_STATE_LO)
+			wcd9xxx_set_buck_mode(codec, BUCK_VREF_2V);
+		else
+			wcd9xxx_set_buck_mode(codec, BUCK_VREF_0P494V);
 		wcd9xxx_enable_buck(codec, clsh_d, true);
 		wcd9xxx_set_fclk_get_ncp(codec, clsh_d, NCP_FCLK_LEVEL_8);
 
@@ -708,6 +1201,7 @@ static void wcd9xxx_clsh_state_hph_l(struct snd_soc_codec *codec,
 		wcd9xxx_clsh_comp_req(codec, clsh_d, CLSH_COMPUTE_HPH_L, false);
 		wcd9xxx_chargepump_request(codec, false);
 		wcd9xxx_enable_clsh_block(codec, clsh_d, false);
+		clsh_d->state &= ~WCD9XXX_CLSH_STATE_HPHL;
 	}
 }
 
@@ -724,7 +1218,11 @@ static void wcd9xxx_clsh_state_hph_r(struct snd_soc_codec *codec,
 		wcd9xxx_chargepump_request(codec, true);
 		wcd9xxx_enable_anc_delay(codec, true);
 		wcd9xxx_clsh_comp_req(codec, clsh_d, CLSH_COMPUTE_HPH_R, true);
-		wcd9xxx_set_buck_mode(codec, BUCK_VREF_0P494V);
+		pr_debug("%s class state: %d\n", __func__, clsh_d->state);
+		if (clsh_d->state & WCD9XXX_CLSH_STATE_LO)
+			wcd9xxx_set_buck_mode(codec, BUCK_VREF_2V);
+		else
+			wcd9xxx_set_buck_mode(codec, BUCK_VREF_0P494V);
 		wcd9xxx_enable_buck(codec, clsh_d, true);
 		wcd9xxx_set_fclk_get_ncp(codec, clsh_d, NCP_FCLK_LEVEL_8);
 
@@ -735,6 +1233,7 @@ static void wcd9xxx_clsh_state_hph_r(struct snd_soc_codec *codec,
 		wcd9xxx_clsh_comp_req(codec, clsh_d, CLSH_COMPUTE_HPH_R, false);
 		wcd9xxx_chargepump_request(codec, false);
 		wcd9xxx_enable_clsh_block(codec, clsh_d, false);
+		clsh_d->state &= ~WCD9XXX_CLSH_STATE_HPHR;
 	}
 }
 
@@ -751,6 +1250,9 @@ static void wcd9xxx_clsh_state_hph_st(struct snd_soc_codec *codec,
 		if (req_state == WCD9XXX_CLSH_STATE_HPHR)
 			wcd9xxx_clsh_comp_req(codec, clsh_d,
 						CLSH_COMPUTE_HPH_R, true);
+		pr_debug("%s class state: %d\n", __func__, clsh_d->state);
+		if (clsh_d->state & WCD9XXX_CLSH_STATE_LO)
+			wcd9xxx_set_buck_mode(codec, BUCK_VREF_2V);
 	} else {
 		dev_dbg(codec->dev, "%s: stub fallback to hph_st\n", __func__);
 		if (req_state == WCD9XXX_CLSH_STATE_HPHL)
@@ -759,6 +1261,7 @@ static void wcd9xxx_clsh_state_hph_st(struct snd_soc_codec *codec,
 		if (req_state == WCD9XXX_CLSH_STATE_HPHR)
 			wcd9xxx_clsh_comp_req(codec, clsh_d,
 						CLSH_COMPUTE_HPH_R, false);
+		clsh_d->state &= ~WCD9XXX_CLSH_STATE_HPH_ST;
 	}
 }
 
@@ -769,8 +1272,12 @@ static void wcd9xxx_clsh_state_lo(struct snd_soc_codec *codec,
 	pr_debug("%s: enter %s, buck_mv %d\n", __func__,
 		 is_enable ? "enable" : "disable", clsh_d->buck_mv);
 
+	pr_debug("class state: %d\n", clsh_d->state);
 	if (is_enable) {
-		wcd9xxx_set_buck_mode(codec, BUCK_VREF_1P8V);
+		if (clsh_d->state & WCD9XXX_CLSH_STATE_HPH_ST)
+			wcd9xxx_set_buck_mode(codec, BUCK_VREF_2V);
+		else
+			wcd9xxx_set_buck_mode(codec, BUCK_VREF_1P8V);
 		wcd9xxx_enable_buck(codec, clsh_d, true);
 		wcd9xxx_set_fclk_get_ncp(codec, clsh_d, NCP_FCLK_LEVEL_5);
 
@@ -796,6 +1303,7 @@ static void wcd9xxx_clsh_state_lo(struct snd_soc_codec *codec,
 		wcd9xxx_set_fclk_put_ncp(codec, clsh_d, NCP_FCLK_LEVEL_5);
 		if (clsh_d->buck_mv != WCD9XXX_CDC_BUCK_MV_1P8)
 			wcd9xxx_enable_buck(codec, clsh_d, false);
+		clsh_d->state &= ~WCD9XXX_CLSH_STATE_LO;
 	}
 }
 

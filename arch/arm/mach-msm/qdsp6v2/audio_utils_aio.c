@@ -179,6 +179,16 @@ static int audio_aio_pause(struct q6audio_aio  *audio)
 			pr_err("%s[%p]: pause cmd failed rc=%d\n",
 				__func__, audio, rc);
 
+		if (rc == 0) {
+			/* Send suspend only if pause was successful */
+			rc = q6asm_cmd(audio->ac, CMD_SUSPEND);
+			if (rc < 0)
+				pr_err("%s[%p]: suspend cmd failed rc=%d\n",
+					__func__, audio, rc);
+		} else
+			pr_err("%s[%p]: not sending suspend since pause failed\n",
+				__func__, audio);
+
 	} else
 		pr_err("%s[%p]: Driver not enabled\n", __func__, audio);
 	return rc;
@@ -419,9 +429,9 @@ static void audio_aio_unmap_ion_region(struct q6audio_aio *audio)
 	pr_debug("%s[%p]:\n", __func__, audio);
 	list_for_each_safe(ptr, next, &audio->ion_region_queue) {
 		region = list_entry(ptr, struct audio_aio_ion_region, list);
-		pr_debug("%s[%p]: phy_address = 0x%lx\n",
-				__func__, audio, region->paddr);
 		if (region != NULL) {
+			pr_debug("%s[%p]: phy_address = 0x%lx\n",
+					__func__, audio, region->paddr);
 			rc = q6asm_memory_unmap(audio->ac,
 						(uint32_t)region->paddr, IN);
 			if (rc < 0)

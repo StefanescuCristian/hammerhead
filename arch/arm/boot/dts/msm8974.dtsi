@@ -666,6 +666,9 @@
 		reg-names = "slimbus_physical", "slimbus_bam_physical";
 		interrupts = <0 163 0 0 164 0>;
 		interrupt-names = "slimbus_irq", "slimbus_bam_irq";
+		qcom,apps-ch-pipes = <0x60000000>;
+		qcom,ea-pc = <0x30>;
+		qcom,slim-mdm = <1>;
 
 		taiko_codec {
 			compatible = "qcom,taiko-slim-pgd";
@@ -732,6 +735,14 @@
 	sound {
 		compatible = "qcom,msm8974-audio-taiko";
 		qcom,model = "msm8974-taiko-snd-card";
+		reg = <0xfe02b000 0x4>,
+		      <0xfe02c000 0x4>,
+		      <0xfe02d000 0x4>,
+		      <0xfe02e000 0x4>;
+		reg-names = "lpaif_pri_mode_muxsel",
+			    "lpaif_sec_mode_muxsel",
+			    "lpaif_tert_mode_muxsel",
+			    "lpaif_quat_mode_muxsel";
 
 		qcom,audio-routing =
 			"RX_BIAS", "MCLK",
@@ -1004,6 +1015,10 @@
 
 	qti,msm-pcm-loopback {
 		compatible = "qti,msm-pcm-loopback";
+	};
+
+	qcom,msm-voice-svc {
+		compatible = "qcom,msm-voice-svc";
 	};
 
 	qcom,msm-dai-q6 {
