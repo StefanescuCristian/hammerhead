@@ -1,6 +1,6 @@
 #!/bin/bash
-#Linaro - https://github.com/Team-Validus/linaro-arm-eabi-4.9.git
-export CROSS_COMPILE="ccache ../linaro-arm-eabi-4.9/bin/arm-eabi-"
+#Linaro - https://github.com/Team-Validus/linaro-arm-eabi-4.8.git
+export CROSS_COMPILE="ccache ../linaro-arm-eabi-4.8/bin/arm-eabi-"
 echo "LN" > .tc
 rm *Linaro.img *Linaro.zip
 
