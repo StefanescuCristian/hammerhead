@@ -5,7 +5,7 @@ echo "SM" > .tc
 rm *SM.img *SM.zip
 
 make mrproper
-make big-bum_defconfig
+make franco_defconfig
 
 if [ $# -gt 0 ]; then
 	echo $1 > .version

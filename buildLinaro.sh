@@ -5,7 +5,7 @@ echo "LN" > .tc
 rm *Linaro.img *Linaro.zip
 
 make mrproper
-make big-bum_defconfig
+make franco_defconfig
 
 if [ $# -gt 0 ]; then
 echo $1 > .version
