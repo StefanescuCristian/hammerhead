@@ -16,7 +16,7 @@ make -j5
 cp arch/arm/boot/zImage-dtb ../ramdisk_hammerhead/
 
 cd ../ramdisk_hammerhead/
-
+git checkout L
 version=$(cat ../hammerhead/.version)
 
 ./mkbootfs boot.img-ramdisk | gzip -9 > ramdisk.gz
