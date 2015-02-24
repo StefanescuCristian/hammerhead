@@ -250,7 +250,7 @@ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -floop-block -floop-parallelize-all -fgraphite -fgraphite-identity \
 -fgcse-after-reload -fgcse-sm -fgcse-las -fweb -frename-registers \
 -ftree-loop-im -ftree-loop-linear -ftree-loop-ivcanon -fivopts \
--ftree-vectorize -ffast-math -fmodulo-sched -ftracer -funroll-loops \
+-ftree-vectorize -ffast-math -fmodulo-sched \
 -fsched-spec-load -fsingle-precision-constant -floop-flatten \
 -fforce-addr -fgcse-lm -fgcse-sm -pipe
 
@@ -363,9 +363,9 @@ KERNELFLAGS	= -O2 -DNDEBUG -floop-interchange -floop-strip-mine \
 -floop-block -floop-parallelize-all -fgraphite -fgraphite-identity \
 -fgcse-after-reload -fgcse-sm -fgcse-las -fweb -frename-registers \
 -ftree-loop-im -ftree-loop-linear -ftree-loop-ivcanon -fivopts \
--ftree-vectorize -ffast-math -fmodulo-sched -ftracer -funroll-loops \
+-ftree-vectorize -ffast-math -fmodulo-sched \
 -fsched-spec-load -fsingle-precision-constant -floop-flatten \
--fforce-addr -fgcse-lm -fgcse-sm -marm \
+-fgcse-lm -fgcse-sm -marm \
 -mtune=cortex-a15 -mcpu=cortex-a15 -mfpu=neon-vfpv4 \
 -munaligned-access -mvectorize-with-neon-quad -pipe
 
