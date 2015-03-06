@@ -23,6 +23,8 @@
 #if defined(CONFIG_FB_MSM_MDSS_KCAL_CTRL)
 #include "mdss_mdp_kcal_ctrl.h"
 #endif
+#include <mach/msm_bus.h>
+#include <mach/msm_bus_board.h>
 
 struct mdp_csc_cfg mdp_csc_convert[MDSS_MDP_MAX_CSC] = {
 	[MDSS_MDP_CSC_RGB2RGB] = {
@@ -1285,6 +1287,7 @@ int mdss_mdp_pp_resume(struct mdss_mdp_ctl *ctl, u32 dspp_num)
 			mdss_pp_res->gamut_disp_cfg[disp_num].flags |=
 				MDP_PP_OPS_WRITE;
 	}
+
 	if (pp_sts.pgc_sts & PP_STS_ENABLE) {
 		flags |= PP_FLAGS_DIRTY_PGC;
 		if (!(mdss_pp_res->pgc_disp_cfg[disp_num].flags
