@@ -2,7 +2,7 @@
 #Linaro - https://github.com/UBERTC/
 export CROSS_COMPILE="ccache ../LinaroMod-arm-eabi-4.9/bin/arm-eabi-"
 echo "LM" > .tc
-rm *Linaro.img *Linaro.zip
+rm *LinaroMod.img
 
 make mrproper
 make cyanogenmod_hammerhead_defconfig
