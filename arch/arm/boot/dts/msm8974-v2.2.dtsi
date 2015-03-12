@@ -23,7 +23,7 @@
 	/* Updated chip ID */
 	qcom,chipid = <0x03030001>;
 
-	qcom,initial-pwrlevel = <2>;
+	qcom,initial-pwrlevel = <4>;
 
 	/* Updated bus bandwidth requirements */
 	qcom,msm-bus,vectors-KBps =
@@ -82,6 +82,13 @@
 
 		qcom,gpu-pwrlevel@4 {
 			reg = <4>;
+			qcom,gpu-freq = <100000000>;
+			qcom,bus-freq = <1>;
+			qcom,io-fraction = <100>;
+                };
+
+		qcom,gpu-pwrlevel@5 {
+			reg = <5>;
 			qcom,gpu-freq = <20000000>;
 			qcom,bus-freq = <0>;
 			qcom,io-fraction = <0>;
