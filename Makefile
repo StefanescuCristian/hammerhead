@@ -363,9 +363,11 @@ KERNELFLAGS	= -O2 -DNDEBUG -floop-interchange -floop-strip-mine \
 -floop-block -floop-parallelize-all -fgraphite -fgraphite-identity \
 -fgcse-after-reload -fgcse-sm -fgcse-las -fweb -frename-registers \
 -ftree-loop-im -ftree-loop-linear -ftree-loop-ivcanon -fivopts \
--ftree-vectorize -ffast-math -fmodulo-sched \
+-ftree-vectorize -ffast-math -fmodulo-sched -floop-interchange \
 -fsched-spec-load -fsingle-precision-constant -floop-flatten \
--fgcse-lm -fgcse-sm -fstrict-aliasing -marm \
+-floop-block -floop-strip-mine -fsched-pressure -fsched-spec-load\
+-fgcse-lm -fgcse-sm -fstrict-aliasing -fno-trapping-math \
+-fno-signed-zeros -ftracer -marm \
 -mtune=cortex-a15 -mcpu=cortex-a15 -mfpu=neon-vfpv4 \
 -munaligned-access -mvectorize-with-neon-quad -pipe
 
