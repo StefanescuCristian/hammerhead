@@ -1,6 +1,6 @@
 #!/bin/bash
 #Linaro - https://github.com/UBERTC/
-export CROSS_COMPILE="ccache ../uber_toolchain/linaro-arm-eabi-4.9/bin/arm-eabi-"
+export CROSS_COMPILE="ccache ../linaro-lto/bin/arm-eabi-"
 echo "LN" > .tc
 rm *Linaro.img *Linaro.zip
 
