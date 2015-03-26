@@ -37,22 +37,23 @@ ifeq ($(call ld-ifversion,-ge,22710001,y),y)
 	#LTO_FINAL_CFLAGS := -flto=jobserver
 
 	# requires plugin ar passed and very recent HJ binutils
-        LTO_CFLAGS += -fno-fat-lto-objects
+        #LTO_CFLAGS += -fno-fat-lto-objects
 
 # Used to disable LTO for specific files (e.g. vdso)
 	DISABLE_LTO := -fno-lto
 
 	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program
+        LTO_FINAL_CFLAGS += -flto-partition=none
 
 ifdef CONFIG_LTO_DEBUG
 	LTO_FINAL_CFLAGS += -dH -fdump-ipa-cgraph -fdump-ipa-inline-details
 	# -Wl,-plugin-save-temps -save-temps
 	LTO_CFLAGS +=
 endif
-ifdef CONFIG_LTO_CP_CLONE
+#ifdef CONFIG_LTO_CP_CLONE
 	LTO_FINAL_CFLAGS += -fipa-cp-clone
 	LTO_CFLAGS += -fipa-cp-clone
-endif
+#endif
 
 	# In principle gcc should pass through options in the object files,
 	# but it doesn't always work. So do it here manually
