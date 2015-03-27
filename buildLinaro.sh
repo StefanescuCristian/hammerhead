@@ -1,5 +1,5 @@
 #!/bin/bash
-#Linaro - https://github.com/UBERTC/
+#Linaro with LTO support - https://github.com/arter97/linaro-lto
 export CROSS_COMPILE="ccache ../linaro-lto/bin/arm-eabi-"
 echo "LN" > .tc
 rm *Linaro.img *Linaro.zip
