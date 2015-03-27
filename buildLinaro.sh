@@ -1,7 +1,7 @@
 #!/bin/bash
 #Linaro with LTO support - https://github.com/arter97/linaro-lto
 export CROSS_COMPILE="ccache ../linaro-lto/bin/arm-eabi-"
-echo "LN" > .tc
+echo "LTO" > .tc
 rm *Linaro.img *Linaro.zip
 
 make mrproper
@@ -20,7 +20,7 @@ git checkout L-cm
 version=$(cat ../hammerhead/.version)
 
 ./mkbootfs bootcm.img-ramdisk | gzip -9 > ramdisk.gz
-./mkbootimg --kernel zImage-dtb --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=hammerhead user_debug=31 msm_watchdog_v2.enable=1 mdss_mdp.panel=dsi androidboot.bootdevice=msm_sdcc.1' --base 0x00000000 --pagesize 2048 --ramdisk_offset 0x02900000 --tags_offset 0x02700000 --ramdisk ramdisk.gz --output ../hammerhead/boot-L-v"$version"-Linaro.img
+./mkbootimg --kernel zImage-dtb --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=hammerhead user_debug=31 msm_watchdog_v2.enable=1 mdss_mdp.panel=dsi androidboot.bootdevice=msm_sdcc.1' --base 0x00000000 --pagesize 2048 --ramdisk_offset 0x02900000 --tags_offset 0x02700000 --ramdisk ramdisk.gz --output ../hammerhead/boot-L-v"$version"-CAF.img
 rm -rf ramdisk.gz
 
 rm -rf zImage*
