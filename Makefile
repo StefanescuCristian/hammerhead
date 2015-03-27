@@ -250,9 +250,11 @@ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -floop-block -floop-parallelize-all -fgraphite -fgraphite-identity \
 -fgcse-after-reload -fgcse-sm -fgcse-las -fweb -frename-registers \
 -ftree-loop-im -ftree-loop-linear -ftree-loop-ivcanon -fivopts \
--ftree-vectorize -ffast-math -fmodulo-sched \
+-ftree-vectorize -ffast-math -fmodulo-sched -floop-interchange \
 -fsched-spec-load -fsingle-precision-constant -floop-flatten \
--fstrict-aliasing -fgcse-lm -fgcse-sm -pipe
+-floop-block -floop-strip-mine -fsched-pressure -fsched-spec-load \
+-fstrict-aliasing -fgcse-lm -fgcse-sm -fno-trapping-math -fno-signed-zeros \
+-ftracer -pipe
 
 HOSTCXXFLAGS = ${HOSTCFLAGS}
 
@@ -366,7 +368,7 @@ KERNELFLAGS	= -O3 -DNDEBUG -floop-interchange -floop-strip-mine \
 -ftree-loop-im -ftree-loop-linear -ftree-loop-ivcanon -fivopts \
 -ftree-vectorize -ffast-math -fmodulo-sched -floop-interchange \
 -fsched-spec-load -fsingle-precision-constant -floop-flatten \
--floop-block -floop-strip-mine -fsched-pressure -fsched-spec-load\
+-floop-block -floop-strip-mine -fsched-pressure -fsched-spec-load \
 -fgcse-lm -fgcse-sm -fstrict-aliasing -fno-trapping-math \
 -fno-signed-zeros -ftracer -marm \
 -mtune=cortex-a15 -mcpu=cortex-a15 -mfpu=neon-vfpv4 \
