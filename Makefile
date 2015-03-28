@@ -254,7 +254,7 @@ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -fsched-spec-load -fsingle-precision-constant -floop-flatten \
 -floop-block -floop-strip-mine -fsched-pressure -fsched-spec-load \
 -fstrict-aliasing -fgcse-lm -fgcse-sm -fno-trapping-math -fno-signed-zeros \
--ftracer -pipe
+-ftracer -floop-nest-optimize -pipe
 
 HOSTCXXFLAGS = ${HOSTCFLAGS}
 
@@ -370,7 +370,7 @@ KERNELFLAGS	= -O3 -DNDEBUG -floop-interchange -floop-strip-mine \
 -fsched-spec-load -fsingle-precision-constant -floop-flatten \
 -floop-block -floop-strip-mine -fsched-pressure -fsched-spec-load \
 -fgcse-lm -fgcse-sm -fstrict-aliasing -fno-trapping-math \
--fno-signed-zeros -ftracer -marm \
+-fno-signed-zeros -ftracer -floop-nest-optimize -marm \
 -mtune=cortex-a15 -mcpu=cortex-a15 -mfpu=neon-vfpv4 \
 -munaligned-access -mvectorize-with-neon-quad -pipe
 
