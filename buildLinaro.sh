@@ -2,7 +2,7 @@
 #Linaro with LTO support - https://github.com/arter97/linaro-lto
 export CROSS_COMPILE="ccache ../linaro-lto/bin/arm-eabi-"
 echo "LTO" > .tc
-rm *Linaro.img *Linaro.zip
+rm *.img
 
 make mrproper
 make cyanogenmod_hammerhead_defconfig
