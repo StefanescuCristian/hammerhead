@@ -336,7 +336,7 @@ CC		+= -O3
 endif
 CC		+= \
 	$(kernel_arch_variant_cflags) \
-	$(GRAPHITE_KERNEL_FLAGS)
+	-pthread
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
