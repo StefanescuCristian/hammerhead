@@ -37,7 +37,7 @@ ifeq ($(call ld-ifversion,-ge,22710001,y),y)
 	#LTO_FINAL_CFLAGS := -flto=jobserver
 
 	# requires plugin ar passed and very recent HJ binutils
-        #LTO_CFLAGS += -fno-fat-lto-objects
+        LTO_CFLAGS += -fno-fat-lto-objects
 
 # Used to disable LTO for specific files (e.g. vdso)
 	DISABLE_LTO := -fno-lto
