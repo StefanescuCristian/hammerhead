@@ -42,7 +42,7 @@ ifeq ($(call ld-ifversion,-ge,22710001,y),y)
 # Used to disable LTO for specific files (e.g. vdso)
 	DISABLE_LTO := -fno-lto
 
-	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program
+	LTO_FINAL_CFLAGS += ${LTO_CFLAGS} -fwhole-program -fmem-report -dH -flto-report
         #LTO_FINAL_CFLAGS += -flto-partition=none
 
 ifdef CONFIG_LTO_DEBUG
