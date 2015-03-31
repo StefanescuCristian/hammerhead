@@ -246,18 +246,15 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = ccache gcc
 HOSTCXX      = ccache g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes \
--O3 -pipe -DNDEBUG -ffast-math -fforce-addr \
--fgcse-after-reload -fgcse-las -fgcse-lm -fgcse-sm -fgraphite \
--fgraphite-identity -fivopts -floop-block -floop-flatten \
--floop-interchange -floop-nest-optimize -floop-parallelize-all \
--floop-strip-mine -fmodulo-sched -fmodulo-sched-allow-regmoves \
--fno-signed-zeros -fno-trapping-math -fpredictive-commoning \
--frename-registers -fsched-pressure -fsched-spec-load \
--fsingle-precision-constant -fstrict-aliasing -ftracer \
--ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon \
--ftree-loop-linear -ftree-vectorize -funroll-loops \
--funsafe-math-optimizations -funswitch-loops \
--fvariable-expansion-in-unroller -fweb -std=gnu89
+-O3 -DNDEBUG -ffast-math -fforce-addr -fgcse-after-reload \
+-fgcse-las -fgcse-lm -fgcse-sm -fgraphite -fgraphite-identity -fipa-pta -fivopts \
+-floop-block -floop-flatten -floop-interchange -floop-nest-optimize \
+-floop-parallelize-all -floop-strip-mine -fmodulo-sched \
+-fmodulo-sched-allow-regmoves -fomit-frame-pointer -fpredictive-commoning \
+-frename-registers -frerun-cse-after-loop -fsched-spec-load \
+-fsingle-precision-constant -ftracer -ftree-loop-distribution -ftree-loop-im \
+-ftree-loop-ivcanon -ftree-loop-linear -ftree-vectorize -funroll-loops \
+-funsafe-loop-optimizations -funswitch-loops -fweb -pipe
 
 
 HOSTCXXFLAGS = ${HOSTCFLAGS}
@@ -366,27 +363,23 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS	= -O3 -pipe -DNDEBUG -ffast-math -fforce-addr \
--fgcse-after-reload -fgcse-las -fgcse-lm -fgcse-sm -fgraphite \
--fgraphite-identity -fivopts -floop-block -floop-flatten \
--floop-interchange -floop-nest-optimize -floop-parallelize-all \
--floop-strip-mine -fmodulo-sched -fmodulo-sched-allow-regmoves \
--fno-signed-zeros -fno-trapping-math -fpredictive-commoning \
--frename-registers -fsched-pressure -fsched-spec-load \
--fsingle-precision-constant -fstrict-aliasing -ftracer \
--ftree-loop-distribution -ftree-loop-im -ftree-loop-ivcanon \
--ftree-loop-linear -ftree-vectorize -funroll-loops \
--funsafe-math-optimizations -funswitch-loops \
--fvariable-expansion-in-unroller -fweb \
--marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 \
--munaligned-access -mvectorize-with-neon-quad -std=gnu89
-
-CC		+= $(KERNELFLAGS)
+KERNELFLAGS	= -O3 -DNDEBUG -ffast-math -fforce-addr -fgcse-after-reload \
+-fgcse-las -fgcse-lm -fgcse-sm -fgraphite -fgraphite-identity -fipa-pta -fivopts \
+-floop-block -floop-flatten -floop-interchange -floop-nest-optimize \
+-floop-parallelize-all -floop-strip-mine -fmodulo-sched \
+-fmodulo-sched-allow-regmoves -fomit-frame-pointer -fpredictive-commoning \
+-frename-registers -frerun-cse-after-loop -fsched-spec-load \
+-fsingle-precision-constant -ftracer -ftree-loop-distribution -ftree-loop-im \
+-ftree-loop-ivcanon -ftree-loop-linear -ftree-vectorize -funroll-loops \
+-funsafe-loop-optimizations -funswitch-loops -fweb \
+-marm -mcpu=cortex-a15 -mfpu=neon-vfpv4 -mtune=cortex-a15 -munaligned-access \
+-mvectorize-with-neon-quad -std=gnu89 -pipe
 CPP		+= $(KERNELFLAGS)
 MODFLAGS	= -DMODULE -DNDEBUG $(KERNELFLAGS)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
-LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds --strip-debug
+LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds --strip-debug --sort-common
+LDFLAGS		= $(LDFLAGS_MODULE)
 CFLAGS_KERNEL	= $(KERNELFLAGS)
 AFLAGS_KERNEL	= $(KERNELFLAGS)
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
