@@ -33,13 +33,6 @@ static DEFINE_SPINLOCK(tz_lock);
  * MIN_BUSY is 1 msec for the sample to be sent
  */
 #define MIN_BUSY		1000
-/*
- * Use BUSY_BIN to check for fully busy rendering
- * intervals that may need early intervention when
- * seen with LONG_FRAME lengths
- */
-#define BUSY_BIN		95
-#define LONG_FRAME		25000
 #define LONG_FLOOR		50000
 #define HIST			5
 #define TARGET			80
@@ -135,15 +128,6 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq,
 		(priv->bin.total_time < FLOOR) ||
 		(unsigned int) priv->bin.busy_time < MIN_BUSY) {
 		return 0;
-	}
-
-	if ((stats.busy_time * 100 / stats.total_time) > BUSY_BIN) {
-		busy_bin += stats.busy_time;
-		if (stats.total_time > LONG_FRAME)
-			frame_flag = 1;
-	} else {
-		busy_bin = 0;
-		frame_flag = 0;
 	}
 
 	level = devfreq_get_freq_level(devfreq, stats.current_frequency);
