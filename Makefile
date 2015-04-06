@@ -339,6 +339,9 @@ CC		+= \
 	-pthread \
 	$(GRAPHITE_KERNEL_FLAGS) \
 	-fstack-protector
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CC		+= -fstrict-aliasing -Werror=strict-aliasing
+endif
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -374,8 +377,10 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-common -Werror-implicit-function-declaration \
-		   -Wno-format-security -fno-delete-null-pointer-checks \
-		   -fno-strict-aliasing
+		   -Wno-format-security -fno-delete-null-pointer-checks
+ifndef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+KBUILD_CFLAGS	+= -fno-strict-aliasing
+endif
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__

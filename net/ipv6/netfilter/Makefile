@@ -32,3 +32,7 @@ obj-$(CONFIG_IP6_NF_MATCH_RT) += ip6t_rt.o
 
 # targets
 obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_KERNEL := -fno-strict-aliasing
+endif

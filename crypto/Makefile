@@ -96,3 +96,18 @@ obj-$(CONFIG_CRYPTO_USER_API_SKCIPHER) += algif_skcipher.o
 #
 obj-$(CONFIG_XOR_BLOCKS) += xor.o
 obj-$(CONFIG_ASYNC_CORE) += async_tx/
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_algapi.o := -fno-strict-aliasing
+CFLAGS_aead.o := -fno-strict-aliasing
+CFLAGS_ablkcipher.o := -fno-strict-aliasing
+CFLAGS_blkcipher.o := -fno-strict-aliasing
+CFLAGS_ahash.o := -fno-strict-aliasing
+CFLAGS_shash.o := -fno-strict-aliasing
+CFLAGS_pcompress.o := -fno-strict-aliasing
+CFLAGS_algboss.o := -fno-strict-aliasing
+CFLAGS_authenc.o := -fno-strict-aliasing
+CFLAGS_authencesn.o := -fno-strict-aliasing
+CFLAGS_rng.o := -fno-strict-aliasing
+endif
+

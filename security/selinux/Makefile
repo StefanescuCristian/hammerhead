@@ -23,3 +23,26 @@ quiet_cmd_flask = GEN     $(obj)/flask.h $(obj)/av_permissions.h
 targets += flask.h av_permissions.h
 $(obj)/flask.h: $(src)/include/classmap.h FORCE
 	$(call if_changed,flask)
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_avc.o := -fno-strict-aliasing
+CFLAGS_hooks.o := -fno-strict-aliasing
+CFLAGS_selinuxfs.o := -fno-strict-aliasing
+CFLAGS_netlink.o := -fno-strict-aliasing
+CFLAGS_nlmsgtab.o := -fno-strict-aliasing
+CFLAGS_netif.o := -fno-strict-aliasing
+CFLAGS_netnode.o := -fno-strict-aliasing
+CFLAGS_netport.o := -fno-strict-aliasing
+CFLAGS_exports.o := -fno-strict-aliasing
+CFLAGS_ebitmap.o := -fno-strict-aliasing
+CFLAGS_hashtab.o := -fno-strict-aliasing
+CFLAGS_symtab.o := -fno-strict-aliasing
+CFLAGS_sidtab.o := -fno-strict-aliasing
+CFLAGS_avtab.o := -fno-strict-aliasing
+CFLAGS_policydb.o := -fno-strict-aliasing
+CFLAGS_services.o := -fno-strict-aliasing
+CFLAGS_conditional.o := -fno-strict-aliasing
+CFLAGS_mls.o := -fno-strict-aliasing
+CFLAGS_status.o := -fno-strict-aliasing
+endif
+

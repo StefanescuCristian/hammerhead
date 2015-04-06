@@ -9,3 +9,7 @@ unix-$(CONFIG_SYSCTL)	+= sysctl_net_unix.o
 
 obj-$(CONFIG_UNIX_DIAG)	+= unix_diag.o
 unix_diag-y		:= diag.o
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_KERNEL := -fno-strict-aliasing
+endif

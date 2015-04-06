@@ -10,3 +10,8 @@ obj-y += q6adm.o q6afe.o q6asm.o q6audio-v2.o q6voice.o q6core.o audio_acdb.o \
 	 rtac.o q6lsm.o
 ocmem-audio-objs += audio_ocmem.o
 obj-$(CONFIG_AUDIO_OCMEM) += ocmem-audio.o
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_audio_acdb.o := -fno-strict-aliasing
+endif
+

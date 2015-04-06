@@ -64,3 +64,8 @@ obj-$(CONFIG_KGDB_KDB) += trace_kdb.o
 endif
 
 libftrace-y := ftrace.o
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_ring_buffer.o := -fno-strict-aliasing
+endif
+

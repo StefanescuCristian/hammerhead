@@ -42,3 +42,15 @@ obj-$(CONFIG_USB_IMX21_HCD)	+= imx21-hcd.o
 obj-$(CONFIG_USB_FSL_MPH_DR_OF)	+= fsl-mph-dr-of.o
 obj-$(CONFIG_USB_OCTEON2_COMMON) += octeon2-common.o
 obj-$(CONFIG_MIPS_ALCHEMY)	+= alchemy-common.o
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_xhci.o := -fno-strict-aliasing
+CFLAGS_xhci-mem.o := -fno-strict-aliasing
+CFLAGS_xhci-ring.o := -fno-strict-aliasing
+CFLAGS_xhci-hub.o := -fno-strict-aliasing
+CFLAGS_xhci-dbg.o := -fno-strict-aliasing
+ifneq ($(CONFIG_USB_XHCI_PLATFORM), )
+CFLAGS_xhci-plat.o := -fno-strict-aliasing
+endif
+endif
+

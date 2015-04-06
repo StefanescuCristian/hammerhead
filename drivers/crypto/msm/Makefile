@@ -10,3 +10,8 @@ else
 endif
 obj-$(CONFIG_CRYPTO_DEV_QCRYPTO) += qcrypto.o
 obj-$(CONFIG_CRYPTO_DEV_OTA_CRYPTO) += ota_crypto.o
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_qcrypto.o := -fno-strict-aliasing
+endif
+

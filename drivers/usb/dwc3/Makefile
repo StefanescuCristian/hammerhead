@@ -50,3 +50,8 @@ ifneq ($(CONFIG_PCI),)
 	obj-$(CONFIG_USB_DWC3)		+= dwc3-pci.o
 endif
 
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_host.o := -fno-strict-aliasing
+CFLAGS_dwc3_otg.o := -fno-strict-aliasing
+endif
+

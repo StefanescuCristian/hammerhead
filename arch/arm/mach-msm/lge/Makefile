@@ -7,3 +7,8 @@ obj-$(CONFIG_LGE_BLUETOOTH) += board-8974-rfkill.o
 obj-$(CONFIG_WIFI_CONTROL_FUNC) += board-wifi-bcm.o
 
 CFLAGS_devices_lge.o += -Idrivers/staging/android
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+CFLAGS_board-wifi-bcm.o := -fno-strict-aliasing
+endif
+
