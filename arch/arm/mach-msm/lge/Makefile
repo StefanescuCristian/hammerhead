@@ -11,4 +11,3 @@ CFLAGS_devices_lge.o += -Idrivers/staging/android
 ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_board-wifi-bcm.o := -fno-strict-aliasing
 endif
-

@@ -128,3 +128,7 @@ endif
 
 CFLAGS_nf_conntrack_core.o := -fno-loop-unroll-and-jam
 CFLAGS_xt_hashlimit.o := -fno-loop-unroll-and-jam
+
+CFLAGS_xt_hashlimit.o = $(DISABLE_LTO)
+CFLAGS_nf_conntrack_core.o = $(DISABLE_LTO)
+
