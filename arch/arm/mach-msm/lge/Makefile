@@ -7,3 +7,4 @@ obj-$(CONFIG_LGE_BLUETOOTH) += board-8974-rfkill.o
 obj-$(CONFIG_WIFI_CONTROL_FUNC) += board-wifi-bcm.o
 
 CFLAGS_devices_lge.o += -Idrivers/staging/android
+CFLAGS_board-8974-hammerhead.o = $(DISABLE_LTO)

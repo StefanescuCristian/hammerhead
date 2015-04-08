@@ -223,4 +223,7 @@ config GENERIC_KERNEL_THREAD
 config ARCH_WANT_OLD_COMPAT_IPC
 	bool
 
+config HAVE_ARCH_SECCOMP_FILTER
+	bool
+
 source "kernel/gcov/Kconfig"

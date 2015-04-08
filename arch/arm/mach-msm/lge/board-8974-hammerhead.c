@@ -53,7 +53,11 @@
 #include <mach/board_lge.h>
 
 
+<<<<<<< HEAD
 static const struct memtype_reserve msm8974_reserve_table[] __initconst = {
+=======
+static struct memtype_reserve msm8974_reserve_table[] __initconst = {
+>>>>>>> 5ff7a3d... Link Time Optimization
 	[MEMTYPE_SMI] = {
 	},
 	[MEMTYPE_EBI0] = {
@@ -69,7 +73,7 @@ static int msm8974_paddr_to_memtype(phys_addr_t paddr)
 	return MEMTYPE_EBI1;
 }
 
-static const struct reserve_info msm8974_reserve_info __initconst = {
+static struct reserve_info msm8974_reserve_info __initconst = {
 	.memtype_reserve_table = msm8974_reserve_table,
 	.paddr_to_memtype = msm8974_paddr_to_memtype,
 };
@@ -117,7 +121,7 @@ void __init msm8974_add_drivers(void)
 #endif
 }
 
-static const struct of_dev_auxdata msm8974_auxdata_lookup[] __initconst = {
+static struct of_dev_auxdata msm8974_auxdata_lookup[] __initconst = {
 	OF_DEV_AUXDATA("qcom,hsusb-otg", 0xF9A55000, \
 			"msm_otg", NULL),
 	OF_DEV_AUXDATA("qcom,ehci-host", 0xF9A55000, \
