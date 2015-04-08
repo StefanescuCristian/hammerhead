@@ -710,6 +710,7 @@ static int atl1c_setup_mac_funcs(struct atl1c_hw *hw)
 		hw->link_cap_flags |= ATL1C_LINK_CAP_1000M;
 	return 0;
 }
+
 /*
  * atl1c_sw_init - Initialize general software structures (struct atl1c_adapter)
  * @adapter: board private structure to initialize

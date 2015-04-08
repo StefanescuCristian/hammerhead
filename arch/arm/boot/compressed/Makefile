@@ -3,7 +3,7 @@
 #
 # create a compressed vmlinuz image from the original vmlinux
 #
-
+KBUILD_CFLAGS	+=${DISABLE_LTO}
 OBJS		=
 
 # Ensure that MMCIF loader code appears early in the image

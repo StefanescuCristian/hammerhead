@@ -823,8 +823,8 @@ extern void trace_event_enable_cmd_record(bool enable);
 extern struct mutex event_mutex;
 extern struct list_head ftrace_events;
 
-extern const char *__start___trace_bprintk_fmt[];
-extern const char *__stop___trace_bprintk_fmt[];
+extern __visible const char *__start___trace_bprintk_fmt[];
+extern __visible const char *__stop___trace_bprintk_fmt[];
 
 #undef FTRACE_ENTRY
 #define FTRACE_ENTRY(call, struct_name, id, tstruct, print, filter)	\
