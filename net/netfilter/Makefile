@@ -121,3 +121,6 @@ obj-$(CONFIG_IP_SET) += ipset/
 
 # IPVS
 obj-$(CONFIG_IP_VS) += ipvs/
+
+CFLAGS_xt_hashlimit.o = $(DISABLE_LTO)
+CFLAGS_nf_conntrack_core.o = $(DISABLE_LTO)

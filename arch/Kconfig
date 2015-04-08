@@ -216,6 +216,10 @@ config HAVE_CMPXCHG_LOCAL
 config HAVE_CMPXCHG_DOUBLE
 	bool
 
+config GENERIC_KERNEL_THREAD
+	bool
+
+
 config ARCH_WANT_OLD_COMPAT_IPC
 	bool
 
