@@ -341,7 +341,9 @@ CC		+= \
 # Handle flags.
 pthread-flag := -pthread
 ifeq ($(call cc-option, $(pthread-flag)),)
-    $(warning $(pthread-flag) not supported by compiler))
+    $(warning ********************************************************************************)
+    $(warning * $(pthread-flag) not supported by compiler)
+    $(warning ********************************************************************************)
 else
     CC		+= $(pthread-flag)
 endif
