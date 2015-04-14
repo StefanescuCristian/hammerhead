@@ -146,7 +146,6 @@ static int tz_get_target_freq(struct devfreq *devfreq, unsigned long *freq,
 	} else {
 		busy_bin = 0;
 		frame_flag = 0;
->>>>>>> CM/cm-12.1-caf
 	}
 
 	level = devfreq_get_freq_level(devfreq, stats.current_frequency);
