@@ -13,6 +13,7 @@
 #define __Q6_ASM_V2_H__
 
 #include <mach/qdsp6v2/apr.h>
+#include <mach/qdsp6v2/rtac.h>
 #include <sound/apr_audio-v2.h>
 #include <linux/list.h>
 #include <linux/msm_ion.h>
@@ -200,6 +201,9 @@ int q6asm_audio_client_buf_free_contiguous(unsigned int dir,
 int q6asm_open_read(struct audio_client *ac, uint32_t format
 		/*, uint16_t bits_per_sample*/);
 
+int q6asm_open_read_v2(struct audio_client *ac, uint32_t format,
+			uint16_t bits_per_sample);
+
 int q6asm_open_write(struct audio_client *ac, uint32_t format
 		/*, uint16_t bits_per_sample*/);
 
@@ -213,6 +217,9 @@ int q6asm_stream_open_write_v2(struct audio_client *ac, uint32_t format,
 int q6asm_open_read_write(struct audio_client *ac,
 			uint32_t rd_format,
 			uint32_t wr_format);
+
+int q6asm_open_loopback_v2(struct audio_client *ac,
+			   uint16_t bits_per_sample);
 
 int q6asm_write(struct audio_client *ac, uint32_t len, uint32_t msw_ts,
 				uint32_t lsw_ts, uint32_t flags);
@@ -235,6 +242,10 @@ int q6asm_memory_unmap(struct audio_client *ac, uint32_t buf_add,
 							int dir);
 
 int q6asm_unmap_cal_blocks(void);
+
+int q6asm_map_rtac_block(struct rtac_cal_block_data *cal_block);
+
+int q6asm_unmap_rtac_block(uint32_t *mem_map_handle);
 
 int q6asm_run(struct audio_client *ac, uint32_t flags,
 		uint32_t msw_ts, uint32_t lsw_ts);
@@ -276,6 +287,10 @@ int q6asm_enc_cfg_blk_aac(struct audio_client *ac,
 
 int q6asm_enc_cfg_blk_pcm(struct audio_client *ac,
 			uint32_t rate, uint32_t channels);
+
+int q6asm_enc_cfg_blk_pcm_format_support(struct audio_client *ac,
+			uint32_t rate, uint32_t channels,
+			uint16_t bits_per_sample);
 
 int q6asm_set_encdec_chan_map(struct audio_client *ac,
 		uint32_t num_channels);
