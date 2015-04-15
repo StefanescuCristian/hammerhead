@@ -125,3 +125,6 @@ obj-$(CONFIG_IP_VS) += ipvs/
 ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_KERNEL := -fno-strict-aliasing
 endif
+
+CFLAGS_nf_conntrack_core.o := -fno-loop-unroll-and-jam
+CFLAGS_xt_hashlimit.o := -fno-loop-unroll-and-jam
