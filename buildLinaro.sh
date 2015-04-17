@@ -1,5 +1,5 @@
 #!/bin/bash
-#Linaro with LTO support - https://github.com/SlimForce/arm-eabi-4.9-cortex-a15
+#SM with LTO support - https://bitbucket.org/sebastian_jena/sm-arm-eabi-5.0
 export CROSS_COMPILE="ccache ../sm-arm-eabi-5.0/bin/arm-eabi-"
 echo "LTO" > .tc
 rm *.img
