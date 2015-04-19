@@ -11,6 +11,6 @@ obj-$(subst y,$(CONFIG_L2TP),$(CONFIG_L2TP_V3)) += l2tp_netlink.o
 obj-$(subst y,$(CONFIG_L2TP),$(CONFIG_L2TP_ETH)) += l2tp_eth.o
 obj-$(subst y,$(CONFIG_L2TP),$(CONFIG_L2TP_DEBUGFS)) += l2tp_debugfs.o
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_KERNEL := -fno-strict-aliasing
 endif

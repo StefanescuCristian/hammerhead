@@ -11,7 +11,7 @@ mmc_core-y			:= core.o bus.o host.o \
 
 mmc_core-$(CONFIG_DEBUG_FS)	+= debugfs.o
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_sdio_io.o := -fno-strict-aliasing
 endif
 

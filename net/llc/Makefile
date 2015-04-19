@@ -24,6 +24,6 @@ llc2-y := llc_if.o llc_c_ev.o llc_c_ac.o llc_conn.o llc_c_st.o llc_pdu.o \
 llc2-$(CONFIG_PROC_FS) += llc_proc.o
 llc2-$(CONFIG_SYSCTL)  += sysctl_net_llc.o
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_KERNEL := -fno-strict-aliasing
 endif

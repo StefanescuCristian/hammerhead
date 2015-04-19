@@ -130,7 +130,7 @@ obj-$(CONFIG_PSTORE)		+= pstore/
 # Patched by YAFFS
 obj-$(CONFIG_YAFFS_FS)		+= yaffs2/
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_binfmt_elf.o		:= -fno-strict-aliasing
 endif
 

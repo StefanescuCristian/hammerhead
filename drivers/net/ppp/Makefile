@@ -14,7 +14,7 @@ obj-$(CONFIG_PPTP) += pppox.o pptp.o
 obj-$(CONFIG_PPPOLAC) += pppox.o pppolac.o
 obj-$(CONFIG_PPPOPNS) += pppox.o pppopns.o
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_ppp_generic.o := -fno-strict-aliasing
 CFLAGS_ppp_async.o := -fno-strict-aliasing
 CFLAGS_ppp_synctty.o := -fno-strict-aliasing

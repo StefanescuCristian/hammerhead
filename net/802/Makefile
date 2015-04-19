@@ -13,7 +13,7 @@ obj-$(CONFIG_ATALK)	+= p8022.o psnap.o
 obj-$(CONFIG_STP)	+= stp.o
 obj-$(CONFIG_GARP)	+= garp.o
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_stp.o := -fno-strict-aliasing
 CFLAGS_p8022.o := -fno-strict-aliasing
 CFLAGS_psnap.o := -fno-strict-aliasing

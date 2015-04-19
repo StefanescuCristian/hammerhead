@@ -35,7 +35,7 @@ obj-$(CONFIG_BT_MSM_SLEEP)              += msm_bt_sleep.o
 msm_bt_sleep-objs                       := bluesleep.o
 obj-$(CONFIG_MSM_BT_POWER)		+= bluetooth-power.o
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_bluesleep.o := -fno-strict-aliasing
 endif
 

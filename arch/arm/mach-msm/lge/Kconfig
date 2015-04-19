@@ -26,10 +26,4 @@ config LGE_BLUETOOTH
 	help
 	  Support for the LGE Bluetooth
 
-config MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
-	tristate "Enable strict-aliasing Optimizations for Hammerhead"
-	depends on MACH_MSM8974_HAMMERHEAD
-	help
-	  Pass the GCC flag -fstrict-aliasing where possible.
-
 endmenu

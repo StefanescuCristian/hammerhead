@@ -24,7 +24,7 @@ targets += flask.h av_permissions.h
 $(obj)/flask.h: $(src)/include/classmap.h FORCE
 	$(call if_changed,flask)
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_avc.o := -fno-strict-aliasing
 CFLAGS_hooks.o := -fno-strict-aliasing
 CFLAGS_selinuxfs.o := -fno-strict-aliasing

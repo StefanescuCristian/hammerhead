@@ -22,6 +22,6 @@ $(obj)/regdb.c: $(src)/db.txt $(src)/genregdb.awk
 
 clean-files := regdb.c
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_KERNEL := -fno-strict-aliasing
 endif

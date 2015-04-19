@@ -341,7 +341,7 @@ SABERMOD_KERNEL_FLAGS := \
          -mvectorize-with-neon-quad \
 	 -pthread
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 SABERMOD_KERNEL_FLAGS += \
 	 -fstrict-aliasing \
 	 -Werror=strict-aliasing
@@ -418,7 +418,7 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-common -Werror-implicit-function-declaration \
 		   -Wno-format-security -fno-delete-null-pointer-checks
-ifndef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifndef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 KBUILD_CFLAGS	+= -fno-strict-aliasing
 endif
 KBUILD_AFLAGS_KERNEL :=

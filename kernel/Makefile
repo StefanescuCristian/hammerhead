@@ -130,7 +130,7 @@ targets += timeconst.h
 $(obj)/timeconst.h: $(src)/timeconst.pl FORCE
 	$(call if_changed,timeconst)
 
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 CFLAGS_sysctl.o := -fno-strict-aliasing
 CFLAGS_sysctl_binary.o := -fno-strict-aliasing
 CFLAGS_workqueue.o := -fno-strict-aliasing
