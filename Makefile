@@ -338,8 +338,7 @@ SABERMOD_KERNEL_FLAGS := \
          -ftree-loop-ivcanon \
          -fprefetch-loop-arrays \
          -ftree-vectorize \
-         -mvectorize-with-neon-quad \
-	 -pthread
+         -mvectorize-with-neon-quad
 
 ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
 SABERMOD_KERNEL_FLAGS += \
@@ -356,21 +355,17 @@ GRAPHITE_KERNEL_FLAGS := \
                  -floop-interchange \
                  -floop-strip-mine \
                  -floop-block \
-                 -floop-nest-optimize \
-		 -floop-parallelize-all \
-	   	 -ftree-parallelize-loops=4 \
-		 -fopenmp
+                 -floop-nest-optimize 
 
 VIVID_CFLAGS := \
 		-O3 \
 		-fsched-spec-load-dangerous \
+		-marm \
 		-DNDEBUG \
 		-ffast-math \
 		-fsingle-precision-constant \
 		-fforce-addr \
-		-fpredictive-commoning \
-		-fsched-pressure \
-		-fipa-pta
+		-fpredictive-commoning
 
 
 # Make variables (CC, etc...)
