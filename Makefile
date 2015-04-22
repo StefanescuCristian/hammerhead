@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -O2
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -DNDEBUG
+HOSTCXXFLAGS = -DNDEBUG -O3
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -326,12 +326,65 @@ MAKEFLAGS += --include-dir=$(srctree)
 $(srctree)/scripts/Kbuild.include: ;
 include $(srctree)/scripts/Kbuild.include
 
+# define some SaberMod flags so it'll be cleaner
+# also add some Vivid flags I'll pick
+
+
+
+SABERMOD_KERNEL_FLAGS := \
+         -ftree-loop-distribution \
+         -ftree-loop-if-convert \
+         -ftree-loop-im \
+         -ftree-loop-ivcanon \
+         -fprefetch-loop-arrays \
+         -ftree-vectorize \
+         -mvectorize-with-neon-quad \
+	 -pthread
+
+ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+SABERMOD_KERNEL_FLAGS += \
+	 -fstrict-aliasing \
+	 -Werror=strict-aliasing
+endif
+
+GRAPHITE_KERNEL_FLAGS := \
+                 -fgraphite \
+                 -fgraphite-identity \
+                 -floop-flatten \
+                 -floop-parallelize-all \
+                 -ftree-loop-linear \
+                 -floop-interchange \
+                 -floop-strip-mine \
+                 -floop-block \
+                 -floop-nest-optimize \
+		 -floop-parallelize-all \
+	   	 -ftree-parallelize-loops=4 \
+		 -fopenmp
+
+VIVID_CFLAGS := \
+		-O3 \
+		-fsched-spec-load-dangerous \
+		-DNDEBUG \
+		-ffast-math \
+		-fsingle-precision-constant \
+		-fforce-addr \
+		-fpredictive-commoning \
+		-frename-registers \
+		-fsched-pressure \
+		-fipa-pta
+
+
 # Make variables (CC, etc...)
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld.bfd
 LDFINAL	= $(LD)
 CC		= $(CROSS_COMPILE)gcc
+CC		+= \
+		  $(VIVID_CFLAGS) \
+		  $(SABERMOD_KERNEL_FLAGS) \
+		  $(GRAPHITE_KERNEL_FLAGS)
+	
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)gcc-ar
 NM		= $(CROSS_COMPILE)gcc-nm
@@ -355,97 +408,6 @@ CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
-# begin The SaberMod Project additions
-
-# Copyright (C) 2015 The SaberMod Project
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-# Handle kernel CFLAGS
-
-# Highest level of basic gcc optimizations if enabled
-# This reads a imported string from the sabermod modified android build system
-ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
-SABERMOD_KERNEL_CFLAGS	:= -O3
-endif
-
-# Extra flags imported from the sabermod modified android build system
-# This will not accually do anything unless these strings are defined
-ifdef SABERMOD_KERNEL_CFLAGS
-    ifdef EXTRA_SABERMOD_GCC_CFLAGS
-    SABERMOD_KERNEL_CFLAGS	+= $(EXTRA_SABERMOD_GCC_CFLAGS)
-    endif
-else
-    ifdef EXTRA_SABERMOD_GCC_CFLAGS
-    SABERMOD_KERNEL_CFLAGS	:= $(EXTRA_SABERMOD_GCC_CFLAGS)
-    endif
-endif
-
-ifdef SABERMOD_KERNEL_CFLAGS
-    ifdef kernel_arch_variant_cflags
-    SABERMOD_KERNEL_CFLAGS	+= $(kernel_arch_variant_cflags)
-    endif
-else
-    ifdef kernel_arch_variant_cflags
-    SABERMOD_KERNEL_CFLAGS	:= $(kernel_arch_variant_cflags)
-    endif
-endif
-
-# posix (pthread) C flag, if the compiler supports it
-# Using a flag like -ftree-parallelize-loops=n can disable this feature
-# In such cases the -pthread flag will not get passed to gcc
-# Instead it will give a warning
-pthread-flag	:= -pthread
-ifeq ($(call cc-option, $(pthread-flag)),)
-$(warning ********************************************************************************)
-$(warning * $(pthread-flag) not supported by compiler)
-$(warning * Or another gcc flag has disabled it)
-$(warning * Not passing the $(pthread-flag) option to gcc)
-$(warning ********************************************************************************)
-else
-    ifdef SABERMOD_KERNEL_CFLAGS
-    SABERMOD_KERNEL_CFLAGS	+= $(pthread-flag)
-    else
-    SABERMOD_KERNEL_CFLAGS	:= $(pthread-flag)
-    endif
-endif
-
-# Strict aliasing for hammerhead if enabled in the defconfig
-ifdef CONFIG_MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
-    ifdef SABERMOD_KERNEL_CFLAGS
-    SABERMOD_KERNEL_CFLAGS	+= -fstrict-aliasing -Werror=strict-aliasing
-    else
-    SABERMOD_KERNEL_CFLAGS	:= -fstrict-aliasing -Werror=strict-aliasing
-    endif
-endif
-
-ifdef SABERMOD_KERNEL_CFLAGS
-    ifdef GRAPHITE_KERNEL_FLAGS
-    SABERMOD_KERNEL_CFLAGS	+= $(GRAPHITE_KERNEL_FLAGS)
-    endif
-else
-    ifdef GRAPHITE_KERNEL_FLAGS
-    SABERMOD_KERNEL_CFLAGS	:= $(GRAPHITE_KERNEL_FLAGS)
-    endif
-endif
-
-# Add everything to CC at the end
-ifdef SABERMOD_KERNEL_CFLAGS
-CC	+= $(SABERMOD_KERNEL_CFLAGS)
-endif
-# end The SaberMod Project additions
-
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
@@ -454,7 +416,6 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    -include $(srctree)/include/linux/kconfig.h
 
 KBUILD_CPPFLAGS := -D__KERNEL__
-
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-common -Werror-implicit-function-declaration \
 		   -Wno-format-security -fno-delete-null-pointer-checks
@@ -669,12 +630,10 @@ all: vmlinux
 
 # This reads a imported string from the sabermod modified android build system to check if -O3 optimizations are enabled.
 # If it is enabled do not bother checking for defconfig option for passing -Os
-ifneq ($(strip $(O3_OPTIMIZATIONS)),true)
     ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
     KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
     else
-    KBUILD_CFLAGS	+= -O2
-    endif
+    KBUILD_CFLAGS	+= -O3 $(call cc-disable-warning,maybe-uninitialized,)
 endif
 # end The SaberMod Project additions
 
