@@ -369,7 +369,6 @@ VIVID_CFLAGS := \
 		-fsingle-precision-constant \
 		-fforce-addr \
 		-fpredictive-commoning \
-		-frename-registers \
 		-fsched-pressure \
 		-fipa-pta
 
