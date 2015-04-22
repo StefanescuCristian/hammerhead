@@ -19,7 +19,6 @@ ifneq ($(call cc-option,${LTO_CFLAGS},n),n)
 # support mixing assembler and LTO code in the same ld -r object.
 # XXX check if the gcc plugin ld is the expected one too
 # XXX some Fedora binutils should also support it. How to check for that?
-ifeq ($(call ld-ifversion,-ge,22710001,y),y)
         LTO_CFLAGS := -flto -fno-toplevel-reorder
 	LTO_FINAL_CFLAGS := -fuse-linker-plugin
 
@@ -72,10 +71,6 @@ endif
 
 	LDFINAL := ${CONFIG_SHELL} ${srctree}/scripts/gcc-ld \
                   ${LTO_FINAL_CFLAGS}
-
-else
-        $(warning "WARNING: Too old linker version $(call ld-version) for kernel LTO. You need Linux binutils. CONFIG_LTO disabled.")
-endif
 else
         $(warning "WARNING: Compiler/Linker does not support LTO/WHOPR with linker plugin. CONFIG_LTO disabled.")
 endif
