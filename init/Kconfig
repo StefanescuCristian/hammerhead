@@ -962,6 +962,10 @@ config CC_OPTIMIZE_FOR_SIZE
 
 	  If unsure, say Y.
 
+config MACH_MSM8975_HAMMERHEAD_STRICT_ALIASING
+	bool "Enable strict aliasing"
+	default n
+
 config LTO_MENU
 	bool "Enable gcc link time optimizations"
 	# Only tested on X86 for now. For other architectures you likely
