@@ -139,14 +139,3 @@ quiet_cmd_crc32 = GEN     $@
 
 $(obj)/crc32table.h: $(obj)/gen_crc32table
 	$(call cmd,crc32)
-
-ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
-CFLAGS_radix-tree.o := -fno-strict-aliasing
-CFLAGS_vsprintf.o := -fno-strict-aliasing
-CFLAGS_klist.o := -fno-strict-aliasing
-CFLAGS_kobject_uevent.o := -fno-strict-aliasing
-CFLAGS_libcrc32c.o := -fno-strict-aliasing
-CFLAGS_dynamic_debug.o := -fno-strict-aliasing
-CFLAGS_nlattr.o := -fno-strict-aliasing
-endif
-

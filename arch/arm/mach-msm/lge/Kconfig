@@ -25,5 +25,4 @@ config LGE_BLUETOOTH
 	depends on BT
 	help
 	  Support for the LGE Bluetooth
-
 endmenu

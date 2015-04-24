@@ -214,8 +214,3 @@ obj-$(CONFIG_ARCH_OMAP)	+= omap/
 ccflags-y += -I$(srctree)/drivers/media/dvb/dvb-core
 ccflags-y += -I$(srctree)/drivers/media/dvb/frontends
 ccflags-y += -I$(srctree)/drivers/media/common/tuners
-
-ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
-CFLAGS_v4l2-ioctl.o := -fno-strict-aliasing
-endif
-

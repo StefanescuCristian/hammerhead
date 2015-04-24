@@ -203,8 +203,3 @@ $(obj)/53c700_d.h: $(src)/53c700.scr $(src)/script_asm.pl
 	$(PERL) -s $(src)/script_asm.pl -ncr7x0_family $@ $(@:_d.h=_u.h) < $<
 
 endif
-
-ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
-CFLAGS_scsi_tgt_if.o := -fno-strict-aliasing
-endif
-

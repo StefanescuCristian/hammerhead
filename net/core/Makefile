@@ -21,7 +21,3 @@ obj-$(CONFIG_TRACEPOINTS) += net-traces.o
 obj-$(CONFIG_NET_DROP_MONITOR) += drop_monitor.o
 obj-$(CONFIG_NETWORK_PHY_TIMESTAMPING) += timestamping.o
 obj-$(CONFIG_NETPRIO_CGROUP) += netprio_cgroup.o
-
-ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
-CFLAGS_KERNEL := -fno-strict-aliasing
-endif
