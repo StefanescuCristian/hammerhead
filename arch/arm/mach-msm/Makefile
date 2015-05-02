@@ -439,6 +439,4 @@ obj-$(CONFIG_PERFMAP) += perfmap.o
 obj-$(CONFIG_ARCH_MSM8974) += cpubw-krait.o
 
 obj-y += fastchg.o
-obj-$(CONFIG_MSM_SLEEPER) += msm-sleeper.o
-
 obj-$(CONFIG_MSM_HOTPLUG) += msm_hotplug.o
