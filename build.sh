@@ -1,6 +1,6 @@
 #!/bin/bash
 #Linaro - https://github.com/UBERTC/
-export CROSS_COMPILE="ccache ../arm-eabi-4.9-cortex-a15/bin/arm-eabi-"
+export CROSS_COMPILE="ccache ../sm-arm-eabi-5.0/bin/arm-eabi-"
 echo "UTC" > .tc
 rm *.img *.zip
 
