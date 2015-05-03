@@ -1,12 +1,4 @@
-CFLAGS_KERNEL	:= -fno-graphite \
-                 -fno-graphite-identity \
-                 -fno-loop-flatten \
-                 -fno-loop-parallelize-all \
-                 -fno-tree-loop-linear \
-                 -fno-loop-interchange \
-                 -fno-loop-strip-mine \
-                 -fno-loop-block \
-                 -fno-loop-nest-optimize -fno-unsafe-math-optimizations
+CFLAGS_KERNEL	:= -fno-unsafe-math-optimizations
 
 netfilter-objs := core.o nf_log.o nf_queue.o nf_sockopt.o
 
@@ -132,4 +124,4 @@ obj-$(CONFIG_IP_SET) += ipset/
 # IPVS
 obj-$(CONFIG_IP_VS) += ipvs/
 CFLAGS_xt_hashlimit.o = $(DISABLE_LTO)
-CFLAGS_nf_conntrack_core.o = $(DISABLE_LTO)
+CFLAGS_nf_conntrack_core.o = $(DISABLE_LTO) -fno-loop-nest-optimize
