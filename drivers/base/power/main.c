@@ -28,7 +28,6 @@
 #include <linux/sched.h>
 #include <linux/async.h>
 #include <linux/suspend.h>
-#include <linux/cpuidle.h>
 #include <linux/timer.h>
 
 #include "../base.h"
@@ -47,10 +46,10 @@ typedef int (*pm_callback_t)(struct device *);
  */
 
 LIST_HEAD(dpm_list);
-static LIST_HEAD(dpm_prepared_list);
-static LIST_HEAD(dpm_suspended_list);
-static LIST_HEAD(dpm_late_early_list);
-static LIST_HEAD(dpm_noirq_list);
+LIST_HEAD(dpm_prepared_list);
+LIST_HEAD(dpm_suspended_list);
+LIST_HEAD(dpm_late_early_list);
+LIST_HEAD(dpm_noirq_list);
 
 struct suspend_stats suspend_stats;
 static DEFINE_MUTEX(dpm_list_mtx);
@@ -174,7 +173,7 @@ static ktime_t initcall_debug_start(struct device *dev)
 {
 	ktime_t calltime = ktime_set(0, 0);
 
-	if (pm_print_times_enabled) {
+	if (initcall_debug) {
 		pr_info("calling  %s+ @ %i, parent: %s\n",
 			dev_name(dev), task_pid_nr(current),
 			dev->parent ? dev_name(dev->parent) : "none");
@@ -189,7 +188,7 @@ static void initcall_debug_report(struct device *dev, ktime_t calltime,
 {
 	ktime_t delta, rettime;
 
-	if (pm_print_times_enabled) {
+	if (initcall_debug) {
 		rettime = ktime_get();
 		delta = ktime_sub(rettime, calltime);
 		pr_info("call %s+ returned %d after %Ld usecs\n", dev_name(dev),
@@ -475,7 +474,6 @@ static void dpm_resume_noirq(pm_message_t state)
 	mutex_unlock(&dpm_list_mtx);
 	dpm_show_time(starttime, state, "noirq");
 	resume_device_irqs();
-	cpuidle_resume();
 }
 
 /**
@@ -897,7 +895,6 @@ static int dpm_suspend_noirq(pm_message_t state)
 	ktime_t starttime = ktime_get();
 	int error = 0;
 
-	cpuidle_pause();
 	suspend_device_irqs();
 	mutex_lock(&dpm_list_mtx);
 	while (!list_empty(&dpm_late_early_list)) {
