@@ -192,7 +192,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
-ARCH		?= $(SUBARCH)
+ARCH		?= arm
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 
 # Architecture as present in compile.h
@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -O2
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -DNDEBUG
+HOSTCXXFLAGS = -DNDEBUG -O3
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -326,12 +326,56 @@ MAKEFLAGS += --include-dir=$(srctree)
 $(srctree)/scripts/Kbuild.include: ;
 include $(srctree)/scripts/Kbuild.include
 
+# define some SaberMod flags so it'll be cleaner
+# also add some Vivid flags I'll pick
+
+
+
+SABERMOD_KERNEL_FLAGS := \
+         -ftree-loop-distribution \
+         -ftree-loop-if-convert \
+         -ftree-loop-im \
+         -ftree-loop-ivcanon \
+         -fprefetch-loop-arrays \
+         -ftree-vectorize \
+         -mvectorize-with-neon-quad \
+	 -fno-strict-aliasing \
+	 -pthread
+
+GRAPHITE_KERNEL_FLAGS := \
+                 -fgraphite \
+                 -fgraphite-identity \
+                 -floop-flatten \
+                 -floop-parallelize-all \
+                 -ftree-loop-linear \
+                 -floop-interchange \
+                 -floop-strip-mine \
+                 -floop-block \
+                 -floop-nest-optimize 
+
+VIVID_CFLAGS := \
+		-O3 \
+		-fsched-pressure \
+		-fsched-spec-load-dangerous \
+		-marm \
+		-DNDEBUG \
+		-ffast-math \
+		-fsingle-precision-constant \
+		-fforce-addr
+
+
+
 # Make variables (CC, etc...)
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld.bfd
 LDFINAL	= $(LD)
 CC		= $(CROSS_COMPILE)gcc
+CC		+= \
+		  $(VIVID_CFLAGS) \
+		  $(SABERMOD_KERNEL_FLAGS) \
+		  $(GRAPHITE_KERNEL_FLAGS)
+	
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)gcc-ar
 NM		= $(CROSS_COMPILE)gcc-nm
@@ -346,19 +390,14 @@ KALLSYMS	= scripts/kallsyms
 PERL		= perl
 CHECK		= sparse
 
-# Use the wrapper for the compiler.  This wrapper scans for new
-# warnings and causes the build to stop upon encountering them.
-CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
-
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
+LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
-
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
@@ -368,12 +407,9 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    -include $(srctree)/include/linux/kconfig.h
 
 KBUILD_CPPFLAGS := -D__KERNEL__
-
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
-		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks
+		   -fno-common -Werror-implicit-function-declaration \
+		   -Wno-format-security -fno-delete-null-pointer-checks
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -563,11 +599,31 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-else
-KBUILD_CFLAGS	+= -O2
+# begin The SaberMod Project additions
+
+# Copyright (C) 2015 The SaberMod Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# This reads a imported string from the sabermod modified android build system to check if -O3 optimizations are enabled.
+# If it is enabled do not bother checking for defconfig option for passing -Os
+    ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+    KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
+    else
+    KBUILD_CFLAGS	+= -O3 $(call cc-disable-warning,maybe-uninitialized,)
 endif
+# end The SaberMod Project additions
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
@@ -990,7 +1046,7 @@ prepare1: prepare2 include/linux/version.h include/generated/utsrelease.h \
 archprepare: archheaders archscripts prepare1 scripts_basic
 
 prepare0: archprepare FORCE
-	$(Q)$(MAKE) $(build)=.
+	$(Q)$(MAKE) $(build)=. missing-syscalls
 
 # All the preparing..
 prepare: prepare0
