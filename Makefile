@@ -371,14 +371,11 @@ AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld.bfd
 LDFINAL	= $(LD)
 CC		= $(CROSS_COMPILE)gcc
-<<<<<<< HEAD
 CC		+= \
 		  $(VIVID_CFLAGS) \
 		  $(SABERMOD_KERNEL_FLAGS) \
 		  $(GRAPHITE_KERNEL_FLAGS)
 	
-=======
->>>>>>> 5ff7a3d... Link Time Optimization
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)gcc-ar
 NM		= $(CROSS_COMPILE)gcc-nm
