@@ -1,6 +1,6 @@
 #!/bin/bash
 #SM with LTO support - https://bitbucket.org/sebastian_jena/sm-arm-eabi-5.0
-export CROSS_COMPILE="ccache ../sm-arm-eabi-5.0/bin/arm-eabi-"
+export CROSS_COMPILE="ccache ../linaro-lto/bin/arm-eabi-"
 echo "LTO" > .tc
 rm *.img
 

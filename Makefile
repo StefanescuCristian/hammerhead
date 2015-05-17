@@ -339,8 +339,7 @@ SABERMOD_KERNEL_FLAGS := \
          -fprefetch-loop-arrays \
          -ftree-vectorize \
          -mvectorize-with-neon-quad \
-	 -fno-strict-aliasing \
-	 -pthread
+	 -fno-strict-aliasing
 
 GRAPHITE_KERNEL_FLAGS := \
                  -fgraphite \
