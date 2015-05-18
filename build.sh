@@ -28,7 +28,3 @@ rm -rf zImage*
 cd ../hammerhead
 
 rm arch/arm/boot/zImage*
-
-if [ "$2" != "" ]; then
-	./zip.sh Linaro
-fi
