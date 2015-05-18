@@ -30,7 +30,7 @@ fi
 
 scm_version()
 {
-	printf '%s%s' -`git rev-parse --verify --short HEAD 2>/dev/null` -`cat .tc`
+	printf '%s%s' -`git rev-parse --verify --short HEAD 2>/dev/null`
 }
 
 collect_files()
