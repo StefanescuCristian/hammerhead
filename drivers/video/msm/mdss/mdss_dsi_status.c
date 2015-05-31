@@ -89,7 +89,7 @@ irqreturn_t hw_vsync_handler(int irq, void *data)
 
 	if (pstatus_data) {
 		cancel_delayed_work(&pstatus_data->check_status);
-		schedule_delayed_work(system_wq, &pstatus_data->check_status,
+		queue_delayed_work(system_wq, &pstatus_data->check_status,
 			msecs_to_jiffies(interval));
 	} else {
 		pr_err("Pstatus data is NULL\n");
