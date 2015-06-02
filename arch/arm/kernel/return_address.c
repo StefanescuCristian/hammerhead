@@ -55,13 +55,5 @@ void *return_address(unsigned int level)
 	else
 		return NULL;
 }
-
-#else /* if defined(CONFIG_FRAME_POINTER) && !defined(CONFIG_ARM_UNWIND) */
-
-#if defined(CONFIG_ARM_UNWIND)
-/* Include unwind tables from arm-eabi toolchain and kernel source */
-#include <unwind.h>
-#endif
-
-
 EXPORT_SYMBOL_GPL(return_address);
+#endif /* if defined(CONFIG_FRAME_POINTER) && !defined(CONFIG_ARM_UNWIND) / else */
