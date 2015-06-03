@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer
-HOSTCXXFLAGS = -O3
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fgraphite -fgraphite-identity -floop-parallelize-all -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -ftree-vectorize -fomit-frame-pointer
+HOSTCXXFLAGS = -O3 -fgraphite -fgraphite-identity -floop-parallelize-all -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -ftree-vectorize
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -564,7 +564,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
-KBUILD_CFLAGS	+= -O3
+KBUILD_CFLAGS	+= -O3 -fgraphite -fgraphite-identity -floop-parallelize-all -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -ftree-vectorize
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
