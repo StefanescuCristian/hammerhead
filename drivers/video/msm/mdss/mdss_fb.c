@@ -1628,7 +1628,6 @@ static int __mdss_fb_display_thread(void *data)
 	}
 
 	atomic_set(&mfd->commits_pending, 0);
-	atomic_set(&mfd->kickoff_pending, 0);
 	wake_up_all(&mfd->idle_wait_q);
 
 	return ret;
