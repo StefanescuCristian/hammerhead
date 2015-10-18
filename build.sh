@@ -1,6 +1,6 @@
 #!/bin/bash
 #Linaro - https://github.com/UBERTC/
-export CROSS_COMPILE="ccache ../sabermod/arm-eabi-5.2/bin/arm-eabi-"
+export CROSS_COMPILE="ccache ../Toolchain/bin/arm-eabi-"
 rm *.img 
 
 make mrproper
